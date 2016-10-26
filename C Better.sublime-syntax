@@ -1,0 +1,122 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: C Better
+file_extensions:
+  - c
+  - h
+first_line_match: "-[*]-( Mode:)? C -[*]-"
+scope: source.c99
+
+variables:
+  identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+  basic_types: 'bool|char|double|float|int|long|short|void'
+  control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
+
+contexts:
+  main:
+    - include: global-context
+
+  global-context:
+    - include: statement-context
+    - include: expression-context
+
+  statement-context:
+    - scope: keyword.control.c
+      match: '\b({{control_keywords}})\b'
+    - scope: punctuation.terminator.c
+      match: ';'
+    - scope: punctuation.definition.block.begin.c
+      match: '\{'
+    - scope: punctuation.definition.block.end.c
+      match: '\}'
+
+  expression-context:
+    - scope: keyword.operator.c
+      match: '[+\-*/%!&|\^=<>]'
+    - scope: punctuation.definition.group.begin.c
+      match: '\('
+    - scope: punctuation.definition.group.end.c
+      match: '\)'
+      push: after-expr-context
+    - scope: punctuation.initializer.begin.c
+      match: '\{'
+    - scope: punctuation.initializer.end.c
+      match: '\}'
+    - scope: punctuation.separator.c
+      match: ','
+    - scope: storage.type.struct.c
+      match: '\bstruct\b'
+      push: 
+        - scope: meta.struct-name.c
+          match: '{{identifier}}'
+          set: after-type-context
+    - scope: meta.identifier-lookahead
+      match: '(?={{identifier}})'
+      push: identifier-context
+
+  identifier-context:
+    - meta_content_scope: meta.identifier-context
+    - scope: storage.type.c
+      match: '\b({{basic_types}})\b'
+      set: after-type-context
+    - scope: variable.function.c
+      match: '{{identifier}}(?=\s*\()'
+      set: after-expr-context
+    - scope: meta.identifier.c
+      match: '{{identifier}}'
+      set: after-expr-context
+
+  after-type-context:
+    - meta_content_scope: meta.after-type-context
+    - scope: storage.type.pointer.c
+      match: '[*]'
+    - scope: punctuation.parenthesis.begin.c
+      match: '\('
+      push: after-type-parenthesis-context
+    - scope: entity.name.variable.c
+      match: '{{identifier}}'
+      set: after-declexpr-context
+    - match: (?=\S)
+      pop: true
+
+  after-type-parenthesis-context:
+    - meta_content_scope: meta.after-type-parenthesis-context
+    - scope: punctuation.parenthesis.end.c
+      match: '\)'
+      set: after-declexpr-context
+    - include: after-type-context
+
+  after-declexpr-context:
+    - meta_content_scope: meta.after-declexpr-context
+    - scope: punctuation.group.param.begin.c
+      match: '\('
+      push: param-group-context
+    - match: '(?=\S)'
+      pop: true
+
+  param-group-context:
+    - scope: punctuation.group.param.end.c
+      match: '\)'
+      pop: true
+
+  after-expr-context:
+    - meta_content_scope: meta.after-expr-context
+    - scope: punctuation.subscriptor.begin.c
+      match: '\['
+      push: subscriptor-context
+    - scope: punctuation.arguments.begin.c
+      match: '\('
+      push: arguments-context
+    - match: '(?=\S)'
+      pop: true
+
+  arguments-context:
+    - scope: punctuation.arguments.end.c
+      match: '\)'
+      pop: true
+
+  subscriptor-context:
+    - scope: punctuation.subscriptor.end.c
+      match: '\]'
+      pop: true

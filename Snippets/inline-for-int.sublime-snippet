@@ -1,0 +1,8 @@
+<snippet>
+	<description>For Loop</description>
+	<content><![CDATA[for (int ${2:i} = 0; $2 < ${1:count}; ${3:++$2}) { \
+	${0}\
+}]]></content>
+	<tabTrigger>for</tabTrigger>
+	<scope>source.c99 meta.inline.c</scope>
+</snippet>

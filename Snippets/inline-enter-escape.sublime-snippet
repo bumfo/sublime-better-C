@@ -1,0 +1,8 @@
+<snippet>
+	<description>Inline Enter Escape</description>
+	<content><![CDATA[
+
+$0${0/(.)/(?1: )/}\]]></content>
+	<tabTrigger><![CDATA[\]]></tabTrigger>
+	<scope></scope>
+</snippet>
