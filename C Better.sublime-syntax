@@ -16,15 +16,15 @@ variables:
   type_qualifier: 'const|volatile'
   compiler_directive: 'inline|restrict|__restrict__|__restrict'
   modifiers: '{{storage_classes}}|{{type_qualifier}}|{{compiler_directive}}'
+  type_modifiers: 'unsigned|signed'
 
 contexts:
   main:
     - include: global-context
 
   global-context:
-    - include: typedef-context
-    - match: '(?={{identifier}})'
-      push: type-context
+    - include: typedef
+    - include: declaration-global
     - include: statement-context
 
   statement-context:
@@ -39,30 +39,59 @@ contexts:
           match: '\}'
           pop: true
         - include: statement-context
-    - include: typedef-context
-    - include: decl-context
+    - include: typedef
+    - include: declaration
     - include: expression-context
 
-  typedef-context:
+  typedef:
     - scope: keyword.typedef.c
       match: '\btypedef\b'
       push: type-context
 
-  decl-context:
+  declaration:
     - scope: storage.modifier.c
       match: '\b({{modifiers}})\b'
       push: type-context
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       push: struct-lookahead-context
+    - scope: storage.type.modifier.c
+      match: '\b({{type_modifiers}})\b'
+      push: after-type-context
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       push: after-type-context
 
+  declaration-global:
+    - scope: storage.modifier.c
+      match: '\b({{modifiers}})\b'
+      push: type-context-global
+    - scope: storage.type.struct.c
+      match: '\bstruct\b'
+      push: struct-lookahead-context-global
+    - scope: storage.type.modifier.c
+      match: '\b({{type_modifiers}})\b'
+      push: after-type-context-global
+    - scope: storage.type.c
+      match: '\b({{basic_types}})\b'
+      push: after-type-context-global
+    - match: '(?={{identifier}})'
+      push: type-context-global
+
+  type-context-common:
+    - include: comments
+    - scope: storage.modifier.c
+      match: '\b({{modifiers}})\b'
+
   type-context:
+    - meta_content_scope: meta.type-context
+    - include: type-context-common
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       set: struct-lookahead-context
+    - scope: storage.type.modifier.c
+      match: '\b({{type_modifiers}})\b'
+      set: after-type-context
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       set: after-type-context
@@ -72,7 +101,27 @@ contexts:
     - match: (?=\S)
       pop: true
 
+  type-context-global:
+    - meta_content_scope: meta.type-context-global
+    - include: type-context-common
+    - scope: storage.type.struct.c
+      match: '\bstruct\b'
+      set: struct-lookahead-context-global
+    - scope: storage.type.modifier.c
+      match: '\b({{type_modifiers}})\b'
+      set: after-type-context-global
+    - scope: storage.type.c
+      match: '\b({{basic_types}})\b'
+      set: after-type-context-global
+    - scope: meta.any-type.c
+      match: '{{identifier}}'
+      set: after-type-context-global
+    - match: (?=\S)
+      pop: true
+
   type-context-param:
+    - meta_content_scope: meta.type-context-param
+    - include: type-context-common
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       set:
@@ -91,6 +140,7 @@ contexts:
       pop: true
 
   expression-context:
+    - include: comments
     - scope: keyword.operator.c
       match: '[+\-*/%!&|\^=<>]'
     - scope: punctuation.definition.group.begin.c
@@ -111,6 +161,8 @@ contexts:
     - scope: meta.identifier-lookahead
       match: '(?={{identifier}})'
       push: identifier-context
+    - include: strings
+    - include: numbers
 
   struct-lookahead-context:
     - meta_content_scope: meta.struct-lookahead-context
@@ -126,8 +178,23 @@ contexts:
     - match: (?=\S)
       pop: true
 
+  struct-lookahead-context-global:
+    - meta_content_scope: meta.struct-lookahead-context
+    - scope: entity.name.struct.forward-decl.c
+      match: '{{identifier}}(?=\s*;)'
+      pop: true
+    - scope: entity.name.struct.c
+      match: '{{identifier}}(?=\s*\{)'
+      pop: true
+    - scope: meta.struct-name.c
+      match: '{{identifier}}'
+      set: after-type-context-global
+    - match: (?=\S)
+      pop: true
+
   identifier-context:
     - meta_content_scope: meta.identifier-context
+    - include: comments
     - scope: variable.function.c
       match: '{{identifier}}(?=\s*\()'
       set: after-expr-context
@@ -135,22 +202,34 @@ contexts:
       match: '{{identifier}}'
       set: after-expr-context
 
-  declexpr-context:
-    - meta_content_scope: meta.declexpr-context
+  declexpr-context-common:
+    - include: comments
     - scope: storage.type.pointer.c
       match: '[*]'
+    - scope: storage.type.c
+      match: '\b({{basic_types}})\b'
     - scope: storage.modifier.c
       match: '\b({{modifiers}})\b'
+    - scope: storage.type.modifier.c
+      match: '\b({{type_modifiers}})\b'
+
+  declexpr-context:
+    - meta_content_scope: meta.declexpr-context
+    - include: declexpr-context-common
     - scope: punctuation.parenthesis.begin.c
       match: '\('
       push: declexpr-parenthesis-context
 
+  declexpr-context-global:
+    - meta_content_scope: meta.declexpr-context-global
+    - include: declexpr-context-common
+    - scope: punctuation.parenthesis.begin.c
+      match: '\('
+      push: declexpr-parenthesis-context-global
+
   declexpr-context-param:
-    - meta_content_scope: meta.declexpr-context
-    - scope: storage.type.pointer.c
-      match: '[*]'
-    - scope: storage.modifier.c
-      match: '\b({{modifiers}})\b'
+    - meta_content_scope: meta.declexpr-context-param
+    - include: declexpr-context-common
     - scope: punctuation.parenthesis.begin.c
       match: '\('
       push: declexpr-parenthesis-context-param
@@ -163,9 +242,21 @@ contexts:
       set: after-declexpr-context
     - match: (?=\S)
       pop: true
+  
+  after-type-context-global:
+    - meta_content_scope: meta.after-type-context-global
+    - include: declexpr-context-global
+    - scope: entity.name.function.c
+      match: '{{identifier}}(?=\s*\()'
+      set: after-declexpr-context
+    - scope: entity.name.variable.c
+      match: '{{identifier}}'
+      set: after-declexpr-context
+    - match: (?=\S)
+      pop: true
 
   after-type-context-param:
-    - meta_content_scope: meta.after-type-context
+    - meta_content_scope: meta.after-type-context-param
     - include: declexpr-context-param
     - scope: variable.parameter.c
       match: '{{identifier}}'
@@ -175,6 +266,7 @@ contexts:
 
   declexpr-parenthesis-context:
     - meta_content_scope: meta.declexpr-parenthesis-context
+    - include: comments
     - include: declexpr-context
     - scope: entity.name.variable.c
       match: '{{identifier}}'
@@ -183,8 +275,23 @@ contexts:
       match: '\)'
       set: after-declexpr-context-fake
 
+  declexpr-parenthesis-context-global:
+    - meta_content_scope: meta.declexpr-parenthesis-context-global
+    - include: comments
+    - include: declexpr-context-global
+    - scope: entity.name.function.c
+      match: '{{identifier}}(?=\s*\()'
+      push: after-declexpr-context
+    - scope: entity.name.variable.c
+      match: '{{identifier}}'
+      push: after-declexpr-context
+    - scope: punctuation.parenthesis.end.c
+      match: '\)'
+      set: after-declexpr-context-fake
+
   declexpr-parenthesis-context-param:
-    - meta_content_scope: meta.declexpr-parenthesis-context
+    - meta_content_scope: meta.declexpr-parenthesis-context-param
+    - include: comments
     - include: declexpr-context-param
     - scope: variable.parameter.c
       match: '{{identifier}}'
@@ -195,6 +302,7 @@ contexts:
 
   after-declexpr-context:
     - meta_content_scope: meta.after-declexpr-context
+    - include: comments
     - match: '(?<=\))'
       set: after-declexpr-context-fake
     - scope: punctuation.subscriptor.begin.c
@@ -208,6 +316,7 @@ contexts:
 
   after-declexpr-context-fake:
     - meta_content_scope: meta.after-declexpr-context-fake
+    - include: comments
     - scope: punctuation.subscriptor.begin.c
       match: '\['
       push: subscriptor-context
@@ -219,6 +328,7 @@ contexts:
 
   param-group-context:
     - meta_content_scope: meta.param-group-context
+    - include: comments
     - scope: punctuation.group.param.end.c
       match: '\)'
       pop: true
@@ -244,6 +354,7 @@ contexts:
 
   param-group-context-fake:
     - meta_content_scope: meta.param-group-context-fake
+    - include: comments
     - scope: punctuation.group.param.end.c
       match: '\)'
       pop: true
@@ -269,6 +380,7 @@ contexts:
 
   after-expr-context:
     - meta_content_scope: meta.after-expr-context
+    - include: comments
     - scope: punctuation.subscriptor.begin.c
       match: '\['
       push: subscriptor-context
@@ -289,3 +401,48 @@ contexts:
       match: '\]'
       pop: true
     - include: expression-context
+
+  strings:
+    - include: scope:source.c#strings
+
+  numbers:
+    - include: scope:source.c#numbers
+  
+  constants:
+    - match: \b(__func__|NULL|true|false|TRUE|FALSE)\b
+      scope: constant.language.c
+    - match: \b(__FILE__|__FUNCTION__|__LINE__)\b
+      scope: support.constant.c
+    # common C constant naming idiom -- kConstantVariable
+    - match: '\bk[A-Z]\w*\b'
+      scope: constant.other.variable.mac-classic.c
+    - match: \b(noErr|kNilOptions|kInvalidID|kVariableLengthArray)\b
+      scope: support.constant.mac-classic.c
+
+  comments:
+    - match: ^/\* =(\s*.*?)\s*= \*/$\n?
+      scope: comment.block.c
+      captures:
+        1: meta.toc-list.banner.block.c
+    - match: /\*
+      scope: punctuation.definition.comment.c
+      push:
+        - meta_scope: comment.block.c
+        - match: \*/
+          scope: punctuation.definition.comment.c
+          pop: true
+    - match: \*/(?!\*)
+      scope: invalid.illegal.stray-comment-end.c
+    - match: ^// =(\s*.*?)\s*=\s*$\n?
+      scope: comment.line.banner.c
+      captures:
+        1: meta.toc-list.banner.line.c
+    - match: //
+      scope: punctuation.definition.comment.c
+      push:
+        - meta_scope: comment.line.double-slash.c
+        - match: '(\\)$\n'
+          captures:
+            1: punctuation.separator.continuation.c
+        - match: \n
+          pop: true
