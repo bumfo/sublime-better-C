@@ -22,8 +22,10 @@ contexts:
     - include: global-context
 
   global-context:
+    - include: typedef-context
+    - match: '(?={{identifier}})'
+      push: type-context
     - include: statement-context
-    - include: expression-context
 
   statement-context:
     - scope: keyword.control.c
@@ -32,8 +34,30 @@ contexts:
       match: ';'
     - scope: punctuation.definition.block.begin.c
       match: '\{'
-    - scope: punctuation.definition.block.end.c
-      match: '\}'
+      push:
+        - scope: punctuation.definition.block.end.c
+          match: '\}'
+          pop: true
+        - include: statement-context
+    - include: typedef-context
+    - include: decl-context
+    - include: expression-context
+
+  typedef-context:
+    - scope: keyword.typedef.c
+      match: '\btypedef\b'
+      push: type-context
+
+  decl-context:
+    - scope: storage.modifier.c
+      match: '\b({{modifiers}})\b'
+      push: type-context
+    - scope: storage.type.struct.c
+      match: '\bstruct\b'
+      push: struct-lookahead-context
+    - scope: storage.type.c
+      match: '\b({{basic_types}})\b'
+      push: after-type-context
 
   type-context:
     - scope: storage.type.struct.c
@@ -72,25 +96,18 @@ contexts:
     - scope: punctuation.definition.group.begin.c
       match: '\('
       push:
-      - include: expression-context
-      - scope: punctuation.definition.group.end.c
-        match: '\)'
-        set: after-expr-context
+        - scope: punctuation.definition.group.end.c
+          match: '\)'
+          set: after-expr-context
+        - include: expression-context
     - scope: punctuation.initializer.begin.c
       match: '\{'
-    - scope: punctuation.initializer.end.c
-      match: '\}'
+      push:
+        - scope: punctuation.initializer.end.c
+          match: '\}'
+        - include: expression-context
     - scope: punctuation.separator.c
       match: ','
-    - scope: storage.modifier.c
-      match: '\b({{modifiers}})\b'
-      push: type-context
-    - scope: storage.type.struct.c
-      match: '\bstruct\b'
-      push: struct-lookahead-context
-    - scope: storage.type.c
-      match: '\b({{basic_types}})\b'
-      push: after-type-context
     - scope: meta.identifier-lookahead
       match: '(?={{identifier}})'
       push: identifier-context
@@ -168,7 +185,7 @@ contexts:
 
   declexpr-parenthesis-context-param:
     - meta_content_scope: meta.declexpr-parenthesis-context
-    - include: declexpr-context
+    - include: declexpr-context-param
     - scope: variable.parameter.c
       match: '{{identifier}}'
       push: after-declexpr-context
@@ -178,6 +195,8 @@ contexts:
 
   after-declexpr-context:
     - meta_content_scope: meta.after-declexpr-context
+    - match: '(?<=\))'
+      set: after-declexpr-context-fake
     - scope: punctuation.subscriptor.begin.c
       match: '\['
       push: subscriptor-context
