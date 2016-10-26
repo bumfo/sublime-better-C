@@ -36,9 +36,11 @@ contexts:
       match: '[+\-*/%!&|\^=<>]'
     - scope: punctuation.definition.group.begin.c
       match: '\('
-    - scope: punctuation.definition.group.end.c
-      match: '\)'
-      push: after-expr-context
+      push:
+      - include: expression-context
+      - scope: punctuation.definition.group.end.c
+        match: '\)'
+        set: after-expr-context
     - scope: punctuation.initializer.begin.c
       match: '\{'
     - scope: punctuation.initializer.end.c
@@ -48,6 +50,12 @@ contexts:
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       push: 
+        - scope: entity.name.struct.forward-decl.c
+          match: '{{identifier}}(?=\s*;)'
+          pop: true
+        - scope: entity.name.struct.c
+          match: '{{identifier}}(?=\s*\{)'
+          pop: true
         - scope: meta.struct-name.c
           match: '{{identifier}}'
           set: after-type-context
@@ -67,28 +75,38 @@ contexts:
       match: '{{identifier}}'
       set: after-expr-context
 
-  after-type-context:
-    - meta_content_scope: meta.after-type-context
+  declexpr-context:
+    - meta_content_scope: meta.declexpr-context
     - scope: storage.type.pointer.c
       match: '[*]'
     - scope: punctuation.parenthesis.begin.c
       match: '\('
-      push: after-type-parenthesis-context
+      push: declexpr-parenthesis-context
+
+  after-type-context:
+    - meta_content_scope: meta.after-type-context
+    - include: declexpr-context
     - scope: entity.name.variable.c
       match: '{{identifier}}'
       set: after-declexpr-context
     - match: (?=\S)
       pop: true
 
-  after-type-parenthesis-context:
-    - meta_content_scope: meta.after-type-parenthesis-context
+  declexpr-parenthesis-context:
+    - meta_content_scope: meta.declexpr-parenthesis-context
+    - include: declexpr-context
+    - scope: entity.name.variable.c
+      match: '{{identifier}}'
+      push: after-declexpr-context
     - scope: punctuation.parenthesis.end.c
       match: '\)'
       set: after-declexpr-context
-    - include: after-type-context
 
   after-declexpr-context:
     - meta_content_scope: meta.after-declexpr-context
+    - scope: punctuation.subscriptor.begin.c
+      match: '\['
+      push: subscriptor-context
     - scope: punctuation.group.param.begin.c
       match: '\('
       push: param-group-context
@@ -115,8 +133,10 @@ contexts:
     - scope: punctuation.arguments.end.c
       match: '\)'
       pop: true
+    - include: expression-context
 
   subscriptor-context:
     - scope: punctuation.subscriptor.end.c
       match: '\]'
       pop: true
+    - include: expression-context
