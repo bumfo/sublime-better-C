@@ -24,6 +24,7 @@ contexts:
 
   global-context:
     - include: typedef
+    - include: preprocessor
     - include: declaration-global
     - include: statement-context
 
@@ -409,36 +410,29 @@ contexts:
     - include: scope:source.c#numbers
   
   constants:
-    - match: \b(__func__|NULL|true|false|TRUE|FALSE)\b
-      scope: constant.language.c
-    - match: \b(__FILE__|__FUNCTION__|__LINE__)\b
-      scope: support.constant.c
-    # common C constant naming idiom -- kConstantVariable
-    - match: '\bk[A-Z]\w*\b'
-      scope: constant.other.variable.mac-classic.c
-    - match: \b(noErr|kNilOptions|kInvalidID|kVariableLengthArray)\b
-      scope: support.constant.mac-classic.c
+    - scope: constant.language.c
+      match: \b(NULL|true|false|TRUE|FALSE)\b
 
   comments:
-    - match: ^/\* =(\s*.*?)\s*= \*/$\n?
-      scope: comment.block.c
+    - scope: comment.block.c
+      match: ^/\* =(\s*.*?)\s*= \*/$\n?
       captures:
         1: meta.toc-list.banner.block.c
-    - match: /\*
-      scope: punctuation.definition.comment.c
+    - scope: punctuation.definition.comment.c
+      match: /\*
       push:
         - meta_scope: comment.block.c
-        - match: \*/
-          scope: punctuation.definition.comment.c
+        - scope: punctuation.definition.comment.c
+          match: \*/
           pop: true
-    - match: \*/(?!\*)
-      scope: invalid.illegal.stray-comment-end.c
-    - match: ^// =(\s*.*?)\s*=\s*$\n?
-      scope: comment.line.banner.c
+    - scope: invalid.illegal.stray-comment-end.c
+      match: \*/(?!\*)
+    - scope: comment.line.banner.c
+      match: ^// =(\s*.*?)\s*=\s*$\n?
       captures:
         1: meta.toc-list.banner.line.c
-    - match: //
-      scope: punctuation.definition.comment.c
+    - scope: punctuation.definition.comment.c
+      match: //
       push:
         - meta_scope: comment.line.double-slash.c
         - match: '(\\)$\n'
@@ -446,3 +440,33 @@ contexts:
             1: punctuation.separator.continuation.c
         - match: \n
           pop: true
+
+  preprocessor:
+    - include: incomplete-inc
+    - include: preprocessor-include
+
+  preprocessor-include:
+    - scope: keyword.preprocessor.c
+      match: '^\s*#include\s*'
+      push:
+        - meta_scope: meta.preprocessor.c
+        - scope: punctuation.definition.string.begin.c
+          match: '"'
+          push:
+            - meta_scope: string.quoted.double.include.c
+            - scope: punctuation.definition.string.end.c
+              match: '"'
+              pop: true
+        - scope: punctuation.definition.string.begin.c
+          match: '<'
+          push:
+            - meta_scope: string.quoted.other.lt-gt.include.c
+            - scope: punctuation.definition.string.end.c
+              match: '>'
+              pop: true
+        - match: (?=\n)
+          pop: true
+
+  incomplete-inc:
+    - scope: meta.preprocessor.incomplete.c
+      match: '^\s*(#i(nc?)?)\b\s*'
