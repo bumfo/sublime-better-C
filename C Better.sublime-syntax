@@ -10,13 +10,12 @@ scope: source.c99
 
 variables:
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
-  basic_types: 'bool|char|double|float|int|long|short|void'
+  basic_types: 'void|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex'
   control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
-  storage_classes: 'static|extern|register'
+  storage_classes: 'static|extern|auto|register'
   type_qualifier: 'const|volatile'
   compiler_directive: 'inline|restrict|__restrict__|__restrict'
   modifiers: '{{storage_classes}}|{{type_qualifier}}|{{compiler_directive}}'
-  type_modifiers: 'unsigned|signed'
 
 contexts:
   main:
@@ -105,9 +104,6 @@ contexts:
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       push: struct-lookahead-context
-    - scope: storage.type.modifier.c
-      match: '\b({{type_modifiers}})\b'
-      push: after-type-context
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       push: after-type-context
@@ -119,9 +115,6 @@ contexts:
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       push: struct-lookahead-context-global
-    - scope: storage.type.modifier.c
-      match: '\b({{type_modifiers}})\b'
-      push: after-type-context-global
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       push: after-type-context-global
@@ -135,9 +128,6 @@ contexts:
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       push: struct-lookahead-context-inline
-    - scope: storage.type.modifier.c
-      match: '\b({{type_modifiers}})\b'
-      push: after-type-context-inline
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       push: after-type-context-inline
@@ -153,9 +143,6 @@ contexts:
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       set: struct-lookahead-context
-    - scope: storage.type.modifier.c
-      match: '\b({{type_modifiers}})\b'
-      set: after-type-context
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       set: after-type-context
@@ -171,9 +158,6 @@ contexts:
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       set: struct-lookahead-context-global
-    - scope: storage.type.modifier.c
-      match: '\b({{type_modifiers}})\b'
-      set: after-type-context-global
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       set: after-type-context-global
@@ -209,9 +193,6 @@ contexts:
     - scope: storage.type.struct.c
       match: '\bstruct\b'
       set: struct-lookahead-context
-    - scope: storage.type.modifier.c
-      match: '\b({{type_modifiers}})\b'
-      set: after-type-context-inline
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       set: after-type-context-inline
@@ -229,6 +210,8 @@ contexts:
       match: '->'
     - scope: keyword.operator.c
       match: '[+\-*/%!&|\^=<>]'
+    - scope: keyword.operator.word.sizeof.c
+      match: '\bsizeof\b'
     - scope: punctuation.separator.c
       match: ','
     - include: numbers
@@ -243,6 +226,7 @@ contexts:
     - scope: punctuation.definition.group.begin.c
       match: '\('
       push:
+        - meta_scope: meta.group.c
         - scope: punctuation.definition.group.end.c
           match: '\)'
           set: after-expr-context
@@ -250,8 +234,10 @@ contexts:
     - scope: punctuation.initializer.begin.c
       match: '\{'
       push:
+        - meta_scope: meta.initializer.c
         - scope: punctuation.initializer.end.c
           match: '\}'
+          pop: true
         - include: expression-context
 
   expression-context-inline:
@@ -262,6 +248,7 @@ contexts:
     - scope: punctuation.definition.group.begin.c
       match: '\('
       push:
+        - meta_scope: meta.group.inline.c
         - include: inline-escape
         - scope: punctuation.definition.group.end.c
           match: '\)'
@@ -270,9 +257,11 @@ contexts:
     - scope: punctuation.initializer.begin.c
       match: '\{'
       push:
+        - meta_scope: meta.initializer.inline.c
         - include: inline-escape
         - scope: punctuation.initializer.end.c
           match: '\}'
+          pop: true
         - include: expression-context-inline
 
   struct-lookahead-context:
@@ -320,6 +309,9 @@ contexts:
   identifier-context:
     - meta_content_scope: meta.identifier-context
     - include: comments
+    - scope: storage.type.cast.struct.c
+      match: '\bstruct\b'
+      set: struct-cast-context
     - scope: storage.type.cast.c
       match: '\b({{basic_types}})\b'
       pop: true
@@ -333,6 +325,9 @@ contexts:
   identifier-context-inline:
     - meta_content_scope: meta.identifier-context-inline
     - include: comments
+    - scope: storage.type.cast.struct.c
+      match: '\bstruct\b'
+      set: struct-cast-context-inline
     - scope: storage.type.cast.c
       match: '\b({{basic_types}})\b'
       pop: true
@@ -343,6 +338,16 @@ contexts:
       match: '{{identifier}}'
       set: after-expr-context-inline
 
+  struct-cast-context:
+    - meta_content_scope: meta.struct-cast-context
+    - match: '(?=\S)'
+      pop: true
+
+  struct-cast-context-inline:
+    - meta_content_scope: meta.struct-cast-context-inline
+    - match: '(?=\S)'
+      pop: true
+
   declexpr-context-common:
     - include: comments
     - scope: storage.type.pointer.c
@@ -351,8 +356,6 @@ contexts:
       match: '\b({{basic_types}})\b'
     - scope: storage.modifier.c
       match: '\b({{modifiers}})\b'
-    - scope: storage.type.modifier.c
-      match: '\b({{type_modifiers}})\b'
 
   declexpr-context:
     - meta_content_scope: meta.declexpr-context
