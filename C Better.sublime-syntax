@@ -690,6 +690,16 @@ contexts:
   strings:
     - include: scope:source.c#strings
 
+  simple-chars:
+    - scope: punctuation.definition.string.begin.c
+      match: "'"
+      push:
+        - meta_scope: string.quoted.single.c
+        - scope: punctuation.definition.string.end.c
+          match: "'"
+          pop: true
+        - include: scope:source.c#string_escaped_char
+
   numbers:
     - include: scope:source.c#numbers
   
@@ -818,6 +828,9 @@ contexts:
     - include: inline-escape
     - include: numbers
     - include: comments
+    - include: simple-chars
+    - scope: keyword.operator.c
+      match: '[+\-*/&|\^<=>]'
 
   preprocessor-quote-in-comment:
     - match: "'"
