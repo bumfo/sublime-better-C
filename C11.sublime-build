@@ -10,5 +10,17 @@
 			"name": "Strict",
 			"shell_cmd": "gcc -std=c11 -pedantic-errors \"${file}\" -o \"${file_path}/${file_base_name}\""
 		},
+		{
+			"name": "Strict O1",
+			"shell_cmd": "gcc -O1 -std=c11 -pedantic-errors \"${file}\" -o \"${file_path}/${file_base_name}\""
+		},
+		{
+			"name": "Strict O2",
+			"shell_cmd": "gcc -O2 -std=c11 -pedantic-errors \"${file}\" -o \"${file_path}/${file_base_name}\""
+		},
+		{
+			"name": "Strict O3",
+			"shell_cmd": "gcc -O3 -std=c11 -pedantic-errors \"${file}\" -o \"${file_path}/${file_base_name}\""
+		},
 	]
 }
