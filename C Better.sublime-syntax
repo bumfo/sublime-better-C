@@ -9,13 +9,16 @@ first_line_match: "-[*]-( Mode:)? C -[*]-"
 scope: source.c99
 
 variables:
+  c99_keywords: 'auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|inline|int|long|register|restrict|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while|_Bool|_Complex|_Imaginary'
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
-  basic_types: 'void|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex'
+  basic_types: 'void|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
   control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
   storage_classes: 'static|extern|auto|register'
   type_qualifier: 'const|volatile'
   compiler_directive: 'inline|restrict|__restrict__|__restrict'
   modifiers: '{{storage_classes}}|{{type_qualifier}}|{{compiler_directive}}'
+  struct_like: 'struct|union'
+  if_like_keywords: 'if|switch|while'
 
 contexts:
   main:
@@ -27,6 +30,8 @@ contexts:
 
   statement-context:
     - include: preprocessor
+    - include: if-like-statement
+    - include: for-statement
     - scope: keyword.control.c
       match: '\b({{control_keywords}})\b'
     - scope: punctuation.terminator.c
@@ -92,6 +97,39 @@ contexts:
     - include: declaration-global
     - include: statement-context-preprocessor
 
+  if-like-statement:
+    - scope: keyword.control.with-expression.c
+      match: '\b({{if_like_keywords}})\b'
+      push:
+        - scope: punctuation.definition.parenthesis.begin.c
+          match: '\('
+          set:
+            - meta_scope: meta.parenthesis.c
+            - scope: punctuation.definition.parenthesis.end.c
+              match: '\)'
+              pop: true
+            - include: expression-context
+        - match: '(?=\S)'
+          pop: true
+
+  for-statement:
+    - scope: keyword.control.with-expression.c
+      match: '\b(for)\b'
+      push:
+        - scope: punctuation.definition.parenthesis.begin.c
+          match: '\('
+          set:
+            - meta_scope: meta.parenthesis.c
+            - include: declaration
+            - scope: punctuation.terminator.c
+              match: ';'
+            - scope: punctuation.definition.parenthesis.end.c
+              match: '\)'
+              pop: true
+            - include: expression-context
+        - match: '(?=\S)'
+          pop: true
+
   typedef:
     - scope: keyword.typedef.c
       match: '\btypedef\b'
@@ -102,7 +140,7 @@ contexts:
       match: '\b({{modifiers}})\b'
       push: type-context
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
+      match: '\b({{struct_like}})\b'
       push: struct-lookahead-context
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
@@ -113,7 +151,7 @@ contexts:
       match: '\b({{modifiers}})\b'
       push: type-context-global
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
+      match: '\b({{struct_like}})\b'
       push: struct-lookahead-context-global
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
@@ -126,7 +164,7 @@ contexts:
       match: '\b({{modifiers}})\b'
       push: type-context-inline
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
+      match: '\b({{struct_like}})\b'
       push: struct-lookahead-context-inline
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
@@ -141,7 +179,7 @@ contexts:
     - meta_content_scope: meta.type-context
     - include: type-context-common
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
+      match: '\b({{struct_like}})\b'
       set: struct-lookahead-context
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
@@ -156,7 +194,7 @@ contexts:
     - meta_content_scope: meta.type-context-global
     - include: type-context-common
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
+      match: '\b({{struct_like}})\b'
       set: struct-lookahead-context-global
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
@@ -171,9 +209,9 @@ contexts:
     - meta_content_scope: meta.type-context-param
     - include: type-context-common
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
+      match: '\b({{struct_like}})\b'
       set:
-        - scope: meta.struct-name.c
+        - scope: meta.struct-tag.c
           match: '{{identifier}}'
           set: after-type-context-param
         - match: '(?=\S)'
@@ -191,7 +229,7 @@ contexts:
     - meta_content_scope: meta.type-context-inline
     - include: type-context-common
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
+      match: '\b({{struct_like}})\b'
       set: struct-lookahead-context
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
@@ -201,6 +239,27 @@ contexts:
       set: after-type-context-inline
     - match: (?=\S)
       pop: true
+
+  initializer:
+    - scope: punctuation.initializer.begin.c
+      match: '\{'
+      push:
+        - meta_scope: meta.initializer.c
+        - scope: punctuation.initializer.end.c
+          match: '\}'
+          pop: true
+        - include: expression-context
+
+  initializer-inline:
+    - scope: punctuation.initializer.begin.c
+      match: '\{'
+      push:
+        - meta_scope: meta.initializer.inline.c
+        - include: inline-escape
+        - scope: punctuation.initializer.end.c
+          match: '\}'
+          pop: true
+        - include: expression-context-inline
 
   expression-context-common:
     - include: comments
@@ -218,6 +277,13 @@ contexts:
     - include: strings
     - include: constants
 
+  cast-types:
+    - scope: storage.type.cast.struct.c
+      match: '\b({{struct_like}})\b'
+      push: struct-lookahead-context
+    - scope: storage.type.cast.c
+      match: '\b({{basic_types}})\b'
+
   expression-context:
     - include: expression-context-common
     - scope: meta.identifier-lookahead
@@ -229,16 +295,10 @@ contexts:
         - meta_scope: meta.group.c
         - scope: punctuation.definition.group.end.c
           match: '\)'
-          set: after-expr-context
+          set: after-group-context
+        - include: cast-types
         - include: expression-context
-    - scope: punctuation.initializer.begin.c
-      match: '\{'
-      push:
-        - meta_scope: meta.initializer.c
-        - scope: punctuation.initializer.end.c
-          match: '\}'
-          pop: true
-        - include: expression-context
+    - include: initializer
 
   expression-context-inline:
     - include: expression-context-common
@@ -252,17 +312,12 @@ contexts:
         - include: inline-escape
         - scope: punctuation.definition.group.end.c
           match: '\)'
-          set: after-expr-context-inline
+          set: after-group-context-inline
+        - include: cast-types
         - include: expression-context-inline
-    - scope: punctuation.initializer.begin.c
-      match: '\{'
-      push:
-        - meta_scope: meta.initializer.inline.c
-        - include: inline-escape
-        - scope: punctuation.initializer.end.c
-          match: '\}'
-          pop: true
-        - include: expression-context-inline
+    - include: initializer-inline
+
+  # struct-declaration
 
   struct-lookahead-context:
     - meta_content_scope: meta.struct-lookahead-context
@@ -271,24 +326,30 @@ contexts:
       pop: true
     - scope: entity.name.struct.c
       match: '{{identifier}}(?=\s*\{)'
-      pop: true
-    - scope: meta.struct-name.c
+      set: struct-decl-context
+    - scope: meta.struct-tag.c
       match: '{{identifier}}'
       set: after-type-context
+    - match: (?=\s*\{)
+      set: struct-decl-context
     - match: (?=\S)
       pop: true
 
   struct-lookahead-context-global:
     - meta_content_scope: meta.struct-lookahead-context-global
+    - match: '(?=\b({{basic_types}})\b)'
+      pop: true
     - scope: entity.name.struct.forward-decl.c
       match: '{{identifier}}(?=\s*;)'
       pop: true
     - scope: entity.name.struct.c
       match: '{{identifier}}(?=\s*\{)'
-      pop: true
-    - scope: meta.struct-name.c
+      set: struct-decl-context
+    - scope: meta.struct-tag.c
       match: '{{identifier}}'
       set: after-type-context-global
+    - match: (?=\s*\{)
+      set: struct-decl-context
     - match: (?=\S)
       pop: true
 
@@ -299,22 +360,64 @@ contexts:
       pop: true
     - scope: entity.name.struct.c
       match: '{{identifier}}(?=\s*\{)'
-      pop: true
-    - scope: meta.struct-name.c
+      set: struct-decl-context-inline
+    - scope: meta.struct-tag.c
       match: '{{identifier}}'
       set: after-type-context-inline
+    - match: (?=\s*\{)
+      set: struct-decl-context-inline
+    - match: (?=\S)
+      pop: true
+
+  struct-decl-list:
+    - scope: punctuation.terminator.c
+      match: ';'
+    - include: declaration
+    - match: '(?={{identifier}})'
+      push: type-context
+
+  struct-decl-context:
+    - scope: punctuation.struct-decl.begin.c
+      match: '\{'
+      set:
+        - meta_scope: meta.struct-decl-context
+        - include: comments
+        - include: struct-decl-list
+        - scope: punctuation.struct-decl.end.c
+          match: '\}'
+          pop: true
+    - match: (?=\S)
+      pop: true
+
+  struct-decl-context-inline:
+    - scope: punctuation.struct-decl.begin.c
+      match: '\{'
+      set:
+        - meta_scope: meta.struct-decl-context-inline
+        - include: comments
+        - include: struct-decl-list
+        - scope: punctuation.struct-decl.end.c
+          match: '\}'
+          pop: true
+    - match: (?=\S)
+      pop: true
+
+  struct-decl-context-param:
+    - scope: punctuation.struct-decl.begin.c
+      match: '\{'
+      set:
+        - meta_scope: meta.struct-decl-context-param
+        - include: comments
+        - include: struct-decl-list
+        - scope: punctuation.struct-decl.end.c
+          match: '\}'
+          set: after-type-context-param
     - match: (?=\S)
       pop: true
 
   identifier-context:
     - meta_content_scope: meta.identifier-context
     - include: comments
-    - scope: storage.type.cast.struct.c
-      match: '\bstruct\b'
-      set: struct-cast-context
-    - scope: storage.type.cast.c
-      match: '\b({{basic_types}})\b'
-      pop: true
     - scope: variable.function.c
       match: '{{identifier}}(?=\s*\()'
       set: after-expr-context
@@ -325,28 +428,12 @@ contexts:
   identifier-context-inline:
     - meta_content_scope: meta.identifier-context-inline
     - include: comments
-    - scope: storage.type.cast.struct.c
-      match: '\bstruct\b'
-      set: struct-cast-context-inline
-    - scope: storage.type.cast.c
-      match: '\b({{basic_types}})\b'
-      pop: true
     - scope: variable.function.c
       match: '{{identifier}}(?=\s*\()'
       set: after-expr-context-inline
     - scope: meta.identifier.c
       match: '{{identifier}}'
       set: after-expr-context-inline
-
-  struct-cast-context:
-    - meta_content_scope: meta.struct-cast-context
-    - match: '(?=\S)'
-      pop: true
-
-  struct-cast-context-inline:
-    - meta_content_scope: meta.struct-cast-context-inline
-    - match: '(?=\S)'
-      pop: true
 
   declexpr-context-common:
     - include: comments
@@ -559,13 +646,8 @@ contexts:
     - meta_content_scope: meta.param-group-context
     - include: param-group-context-common
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
-      push:
-        - scope: meta.struct-name.c
-          match: '{{identifier}}'
-          set: after-type-context-param
-        - match: '(?=\S)'
-          pop: true
+      match: '\b({{struct_like}})\b'
+      push: struct-decl-context-param
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       push: after-type-context-param
@@ -580,13 +662,8 @@ contexts:
     - meta_content_scope: meta.param-group-context-fake
     - include: param-group-context-common
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
-      push:
-        - scope: meta.struct-name.c
-          match: '{{identifier}}'
-          set: after-type-context
-        - match: '(?=\S)'
-          pop: true
+      match: '\b({{struct_like}})\b'
+      push: struct-decl-context
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       push: after-type-context
@@ -601,13 +678,8 @@ contexts:
     - meta_content_scope: meta.param-group-context-inline
     - include: param-group-context-common
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
-      push:
-        - scope: meta.struct-name.c
-          match: '{{identifier}}'
-          set: after-type-context-param-inline
-        - match: '(?=\S)'
-          pop: true
+      match: '\b({{struct_like}})\b'
+      push: struct-decl-context-inline
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       push: after-type-context-param-inline
@@ -622,9 +694,9 @@ contexts:
     - meta_content_scope: meta.param-group-context-fake-inline
     - include: param-group-context-common
     - scope: storage.type.struct.c
-      match: '\bstruct\b'
+      match: '\b({{struct_like}})\b'
       push:
-        - scope: meta.struct-name.c
+        - scope: meta.struct-tag.c
           match: '{{identifier}}'
           set: after-type-context-inline
         - match: '(?=\S)'
@@ -638,6 +710,14 @@ contexts:
     - scope: meta.any-type.c
       match: '{{identifier}}'
       push: after-type-context-inline
+
+  after-group-context:
+    - include: initializer
+    - include: after-expr-context
+
+  after-group-context-inline:
+    - include: initializer-inline
+    - include: after-expr-context-inline
 
   after-expr-context:
     - meta_content_scope: meta.after-expr-context
