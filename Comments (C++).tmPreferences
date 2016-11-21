@@ -4,7 +4,7 @@
 	<key>name</key>
 	<string>Comments</string>
 	<key>scope</key>
-	<string>source.c99, source.c, source.c++, source.c++11, source.objc, source.objc++</string>
+	<string>source.c99, source.c11, source.c, source.c++, source.c++11, source.objc, source.objc++</string>
 	<key>settings</key>
 	<dict>
 		<key>shellVariables</key>
