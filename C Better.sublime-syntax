@@ -49,6 +49,13 @@ contexts:
     - include: comments
     - include: if-like-statement
     - include: for-statement
+    - scope: keyword.control.return.c
+      match: 'return'
+      push: 
+        - meta_scope: meta.statement.return.c
+        - include: expressions
+        - match: '(?=\S)'
+          pop: true
     - scope: keyword.control.c
       match: '\b({{control_keywords}})\b'
     - include: typedef
@@ -267,7 +274,7 @@ contexts:
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       set: after-type-context
-    - scope: meta.storage.type.any.c
+    - scope: storage.type.any.c #meta.
       match: '{{identifier}}'
       set: after-type-context
     - match: (?=\S)
@@ -282,7 +289,7 @@ contexts:
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       set: after-type-context-typedef
-    - scope: meta.storage.type.any.c
+    - scope: storage.type.any.c #meta.
       match: '{{identifier}}'
       set: after-type-context-typedef
     - match: (?=\S)
@@ -323,7 +330,7 @@ contexts:
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       set: after-type-context-param
-    - scope: meta.storage.type.any.c
+    - scope: storage.type.any.c #meta.
       match: '{{identifier}}'
       set: after-type-context-param
     - match: (?=\S)
@@ -338,7 +345,7 @@ contexts:
     - scope: storage.type.c
       match: '\b({{basic_types}})\b'
       set: after-type-context-inline
-    - scope: meta.storage.type.any.c
+    - scope: storage.type.any.c #meta.
       match: '{{identifier}}'
       set: after-type-context-inline
     - match: (?=\S)
@@ -423,7 +430,7 @@ contexts:
     - scope: punctuation.accessor.c
       match: '->'
     - scope: keyword.operator.c
-      match: '[+\-*/%!&|\^=<>]'
+      match: '[+\-*/%!&|\^=<>?:]'
     - include: sizeof
     - scope: keyword.operator.comma.c # punctuation.separator.c
       match: ','
