@@ -7,6 +7,10 @@
 	"variants":
 	[
 		{
+			"name": "Strict O2",
+			"shell_cmd": "g++ -O2 -std=c++11 -pedantic-errors  \"${file}\" -o \"${file_path}/${file_base_name}\""
+		},
+		{
 			"name": "Run",
 			"shell_cmd": "g++ -std=c++11 \"${file}\" -o \"${file_path}/${file_base_name}\" && \"${file_path}/${file_base_name}\""
 		}
