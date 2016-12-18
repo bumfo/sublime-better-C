@@ -1,0 +1,24 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: C++ Better
+file_extensions:
+  - h
+  - cpp
+  - cc
+  - cp
+  - cxx
+  - c++
+  - C
+  - hh
+  - hpp
+  - hxx
+  - h++
+  - inl
+  - ipp
+first_line_match: '-\*- C\+\+ -\*-'
+scope: source.c++14
+
+contexts:
+  main:
+    - include: scope:source.c11#main
