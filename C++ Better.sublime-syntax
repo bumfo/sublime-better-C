@@ -19,6 +19,63 @@ file_extensions:
 first_line_match: '-\*- C\+\+ -\*-'
 scope: source.c++14
 
+variables:
+  identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+  control_keywords: 'break|case|catch|continue|default|do|else|for|goto|if|_Pragma|return|switch|throw|try|while'
+  memory_operators: 'new|delete'
+  basic_types: 'asm|__asm__|auto|bool|_Bool|char|_Complex|double|float|_Imaginary|int|long|short|signed|unsigned|void'
+  before_tag: 'struct|union|enum\s+class|enum\s+struct|enum|class'
+  storage_classes: 'static|export|extern|friend|explicit|virtual|register|thread_local'
+  type_qualifier: 'const|constexpr|mutable|typename|volatile'
+  compiler_directive: 'inline|restrict|__restrict__|__restrict'
+  visibility_modifiers: 'private|protected|public'
+  other_keywords: 'typedef|decltype|nullptr|operator|{{visibility_modifiers}}|static_assert|sizeof|using|typeid|alignof|alignas|namespace|template'
+  modifiers: '{{storage_classes}}|{{type_qualifier}}|{{compiler_directive}}'
+
 contexts:
   main:
-    - include: scope:source.c11#main
+    - include: global
+
+  global:
+    - include: scope:source.c11#preprocessor
+    - include: statements
+
+  statements:
+    - include: comments
+    - scope: punctuation
+      match: '[\(\)\[\]\{\},;.]'
+    - scope: punctuation
+      match: '->|<:|:>|<%|%>'
+    - scope: keyword
+      match: '[+\-*/=!%\^&|:?><~]'
+    - scope: storage.type
+      match: '\b(?:{{basic_types}})\b'
+    - scope: storage.modifier
+      match: '\b(?:{{modifiers}})\b'
+    - scope: keyword
+      match: '\b(?:{{control_keywords}})\b'
+    # - scope: storage.type.custom
+    #   match: '{{type_t}}'
+    # - scope: keyword.other
+    #   match: '\b(?:{{c++14_keywords}})\b'
+    - include: constants
+    - include: strings
+    - include: numbers
+
+    - scope: variable.function.c
+      match: '{{identifier}}(?=\()'
+
+  comments:
+    - include: scope:source.c11#comments
+  
+  constants:
+    - include: scope:source.c++#unique-constants
+    - include: scope:source.c#constants
+
+  strings:
+    - include: scope:source.c++#unique-strings
+    - include: scope:source.c#strings
+
+  numbers:
+    - include: scope:source.c++#unique-numbers
+    - include: scope:source.c#numbers
