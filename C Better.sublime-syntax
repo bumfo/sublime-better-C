@@ -156,6 +156,8 @@ contexts:
           match: '\('
           set:
             - meta_scope: meta.parens.control.c
+            - scope: storage.type.c
+              match: \b(?:{{basic_types}})\b
             - include: declaration-maybe
             - scope: punctuation.terminator.c
               match: ';'
@@ -626,6 +628,9 @@ contexts:
   after-type-context-param:
     - meta_content_scope: meta.after-type-context-param
     - include: declarator-param
+    - scope: punctuation.definition.brackets.subscriptor.begin.c
+      match: '{{opening_bracket}}'
+      push: subscriptor-context
     - scope: variable.parameter.c
       match: '{{identifier}}'
       set: after-declexpr-context-param
@@ -714,6 +719,16 @@ contexts:
     - scope: punctuation.definition.brackets.subscriptor.begin.c
       match: '{{opening_bracket}}'
       push: subscriptor-context
+    # - scope: punctuation.definition.parens.parameters.old-c.begin.c
+    #   match: '\((?=\s*(?!\b(?:{{basic_types}})\b){{identifier}}\s*(?:,[\s,[:alnum:]_]*\)|\))\s*(?:$|[^\s;]))'
+    #   push:
+    #     - scope: punctuation.separator.declarator.c
+    #       match: ','
+    #     - scope: variable.parameter.c
+    #       match: \b(?!(?:{{basic_types}})\b){{identifier}}\b
+    #     - scope: punctuation.definition.parens.parameters.old-c.end.c
+    #       match: '\)'
+    #       pop: true
     - scope: punctuation.definition.parens.parameters.begin.c
       match: '\('
       push: parameters-context
@@ -795,10 +810,32 @@ contexts:
     # - scope: storage.type.maybe.c
     #   match: '{{identifier}}(?=\s*\*|\s+[[:alpha:]_]|\s*\(\s*\*)'
     #   push: after-type-context-param
+    # - scope: storage.type.any.c
+    #   match: '{{identifier}}'
+    #   push: after-type-context-param
+
+  
+
     - scope: storage.type.any.c
-      match: '{{identifier}}'
+      match: '{{identifier}}(?=\s*[^,\s\)\[])'
       push: after-type-context-param
-    - include: typeless-parens
+
+
+    - scope: storage.type.any.c
+      match: '{{identifier}}(?=\s*(?:,.*\)|.*\))\s*(?:;))'
+      push: after-type-context-param
+
+
+    # - include: typeless-parens
+    # - include: declarator-param
+    - scope: punctuation.section.parens.begin.c
+      match: '\('
+      push: declexpr-parens-context-param
+
+    - scope: variable.parameter.c
+      match: '{{identifier}}'
+      push: after-declexpr-context-param
+
     - match: '{{opening_brace}}|(?=;)'
       pop: true
 
