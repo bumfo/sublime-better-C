@@ -60,7 +60,7 @@ contexts:
     - include: for-statement
     - scope: keyword.control.return.c
       match: 'return'
-      push: 
+      push:
         - meta_scope: meta.statement.return.c
         - include: expressions
         - match: '(?=\S)'
@@ -814,7 +814,7 @@ contexts:
     #   match: '{{identifier}}'
     #   push: after-type-context-param
 
-  
+
 
     - scope: storage.type.any.c
       match: '{{identifier}}(?=\s*[^,\s\)\[])'
@@ -988,7 +988,7 @@ contexts:
 
   preprocessor-parameters:
     - scope: punctuation.definition.parens.parameters.begin.c
-      match: '\(' 
+      match: '\('
       set:
         - scope: punctuation.definition.variadic.c
           match: '\.\.\.'
@@ -1027,7 +1027,7 @@ contexts:
 
     - scope: variable.function.c
       match: '{{identifier}}(?=\()'
-      
+
     # - include: statements
     # - include: expressions
 
