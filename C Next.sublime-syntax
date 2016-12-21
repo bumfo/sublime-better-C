@@ -1,0 +1,168 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: C Next
+file_extensions:
+  - c
+  - h
+first_line_match: "-[*]-( Mode:)? C -[*]-"
+scope: source.c11
+
+variables:
+  c90_keywords: 'auto|break|case|char|const|continue|default|do|double|else|enum|extern|float|for|goto|if|int|long|register|return|short|signed|sizeof|static|struct|switch|typedef|union|unsigned|void|volatile|while'
+  c99_keywords: '{{c90_keywords}}|inline|restrict|_Bool|_Complex|_Imaginary'
+  c11_keywords: '{{c99_keywords}}|_Alignas|_Alignof|_Atomic|_Generic|_Noreturn|_Static_assert|_Thread_local'
+  identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+  basic_types: 'void|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
+  control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
+  storage_classes: 'static|extern|auto|register'
+  type_qualifier: 'const|volatile'
+  compiler_directive: 'inline|restrict|__restrict__|__restrict'
+  modifiers: '{{storage_classes}}|{{type_qualifier}}|{{compiler_directive}}'
+  preprocessors: 'if|ifdef|ifndef|else|endif|define|include|pragma'
+
+contexts:
+
+# prototypes
+
+  prototype:
+    - include: comments
+
+  main:
+    - include: global
+
+  global:
+    - include: preprocessors
+    - include: statements
+
+# preprocessors
+
+  preprocessors:
+    - scope: punctuation
+      match: '#'
+      with_prototype:
+        - include: inline-escape
+      push:
+        - scope: meta.preprocessor.incomplete.c
+          match: '\bi(nc?)?\b\s*'
+        - scope: keyword
+          match: \b(include)\b
+          set:
+            - scope: punctuation
+              match: '"'
+              set: string-content
+              with_prototype:
+                - scope: punctuation
+                  match: '"'
+                  pop: true
+            - scope: punctuation
+              match: '<'
+              set: string-content
+              with_prototype:
+                - scope: punctuation
+                  match: '>'
+                  pop: true
+        - scope: keyword
+          match: \b(define)\b
+          set: [preprocessor-expressions, after-macro-define, define-identifier]
+        - scope: keyword
+          match: \b({{preprocessors}})\b
+
+  after-macro-define:
+    - match: '(?=\()'
+      set: simple-parameters
+    - match: '\s+'
+      pop: true
+
+  preprocessor-expressions:
+    - include: statements
+
+# modules
+
+  statements:
+    - scope: punctuation
+      match: '[\(\)\[\]\{\},;.]'
+    - scope: punctuation
+      match: '->|<:|:>|<%|%>'
+    - scope: keyword
+      match: '[+\-*/=!%\^&|:?><~]'
+    - scope: storage.type
+      match: '\b(?:{{basic_types}})\b'
+    - scope: storage.modifier
+      match: '\b(?:{{modifiers}})\b'
+    - scope: keyword
+      match: '\b(?:{{control_keywords}})\b'
+    - scope: keyword.other
+      match: '\b(?:{{c11_keywords}})\b'
+    - include: constants
+    - include: strings
+    - include: numbers
+
+  strings:
+    - include: scope:source.c#strings
+
+  numbers:
+    - include: scope:source.c#numbers
+
+  constants:
+    - scope: constant.language.c
+      match: \b(NULL|true|false|TRUE|FALSE)\b
+
+  comments:
+    - scope: comment.block.c
+      match: ^/\* =(\s*.*?)\s*= \*/$\n?
+      captures:
+        1: meta.toc-list.banner.block.c
+    - scope: punctuation.definition.comment.c
+      match: /\*
+      push:
+        - meta_scope: comment.block.c
+        - scope: punctuation.definition.comment.c
+          match: \*/
+          pop: true
+    - scope: invalid.illegal.stray-comment-end.c
+      match: \*/(?!\*)
+    - scope: comment.line.banner.c
+      match: ^// =(\s*.*?)\s*=\s*$\n?
+      captures:
+        1: meta.toc-list.banner.line.c
+    - scope: punctuation.definition.comment.c
+      match: //
+      push:
+        - meta_scope: comment.line.double-slash.c
+        - match: '(\\)$\n'
+          captures:
+            1: punctuation.separator.continuation.c
+        - match: (?=\n)
+          pop: true
+
+# components
+
+  string-content:
+    - meta_scope: string
+    - meta_include_prototype: false
+
+# contexts
+
+  inline-escape:
+    - scope: punctuation
+      match: '\\\n'
+    - match: '(?=\n)'
+      pop: true
+
+  define-identifier:
+    - match: '{{identifier}}'
+      scope: identifier
+      pop: true
+
+  simple-parameters:
+    - scope: punctuation
+      match: '\('
+      set:
+        - scope: punctuation
+          match: ','
+        - scope: punctuation
+          match: '\)'
+          pop: true
+        - scope: variable.parameter
+          match: '{{identifier}}'
