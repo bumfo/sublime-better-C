@@ -14,6 +14,7 @@ variables:
   c11_keywords: '{{c99_keywords}}|_Alignas|_Alignof|_Atomic|_Generic|_Noreturn|_Static_assert|_Thread_local'
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
   basic_types: 'void|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
+  int_types: 'u?int(8|16|32|64|128)_t'
   control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
   storage_classes: 'static|extern|auto|register'
   type_qualifier: 'const|volatile'
@@ -39,9 +40,9 @@ contexts:
 
   preprocessors:
     - scope: punctuation
-      match: '#'
+      match: '^\s*#'
       with_prototype:
-        - include: inline-escape
+        - include: inline_escape
       push:
         - scope: meta.preprocessor.incomplete.c
           match: '\bi(nc?)?\b\s*'
@@ -50,53 +51,58 @@ contexts:
           set:
             - scope: punctuation
               match: '"'
-              set: string-content
+              set: string_content
               with_prototype:
                 - scope: punctuation
                   match: '"'
                   pop: true
             - scope: punctuation
               match: '<'
-              set: string-content
+              set: string_content
               with_prototype:
                 - scope: punctuation
                   match: '>'
                   pop: true
         - scope: keyword
           match: \b(define)\b
-          set: [preprocessor-expressions, after-macro-define, define-identifier]
+          set: [preprocessor_expressions, after_macro_define, define_identifier]
         - scope: keyword
           match: \b({{preprocessors}})\b
-
-  after-macro-define:
-    - match: '(?=\()'
-      set: simple-parameters
-    - match: '\s+'
-      pop: true
-
-  preprocessor-expressions:
-    - include: statements
 
 # modules
 
   statements:
-    - scope: punctuation
-      match: '[\(\)\[\]\{\},;.]'
-    - scope: punctuation
-      match: '->|<:|:>|<%|%>'
-    - scope: keyword
-      match: '[+\-*/=!%\^&|:?><~]'
-    - scope: storage.type
-      match: '\b(?:{{basic_types}})\b'
+    - include: typedef
+    - include: declaration
     - scope: storage.modifier
       match: '\b(?:{{modifiers}})\b'
     - scope: keyword
       match: '\b(?:{{control_keywords}})\b'
+    - include: expressions
+
+  expressions:
+    - include: punctuations
+    - scope: keyword
+      match: '[+\-*/=!%\^&|:?><~]'
+    - include: types
     - scope: keyword.other
       match: '\b(?:{{c11_keywords}})\b'
     - include: constants
     - include: strings
     - include: numbers
+
+    - match: '(?={{identifier}}\s*\()'
+      push:
+        - include: scope:source.c#c99
+        - scope: variable.function
+          match: '{{identifier}}'
+        - include: easy_pop
+
+  punctuations:
+    - scope: punctuation
+      match: '[\(\)\[\]\{\},;.]'
+    - scope: punctuation
+      match: '->|<:|:>|<%|%>'
 
   strings:
     - include: scope:source.c#strings
@@ -136,33 +142,225 @@ contexts:
         - match: (?=\n)
           pop: true
 
+  typedef:
+    - scope: keyword
+      match: '\b(typedef)\b'
+      set: [typedef_after_typename, type_context]
+
+  types:
+    - match: '(?=\b({{modifiers}}|{{basic_types}}|{{int_types}}|struct|union)\b)'
+      push: type_context
+
 # components
 
-  string-content:
+  string_content:
     - meta_scope: string
     - meta_include_prototype: false
 
+  preprocessor_expressions:
+    - include: statements
+
+  declaration:
+    - match: '(?=\b({{modifiers}}|{{basic_types}}|{{int_types}}|struct|union)\b)'
+      push: [declarator_comma, declarator_identifier, type_context]
+
+  basic_types:
+    - scope: keyword
+      match: '\b(?:{{modifiers}})\b'
+    - scope: storage.type
+      match: '\b(?:{{basic_types}}|{{int_types}})\b'
+      set: after_typename
+    - scope: storage.type
+      match: '\b(struct|union)\b'
+      set: [after_typename, structlike_block, structlike_tag]
+
 # contexts
 
-  inline-escape:
+  easy_pop:
+    - match: '(?=\S)'
+      pop: true
+
+  # types
+
+  typedef_after_typename:
+    - scope: entity.name.type
+      match: '{{identifier}}'
+      pop: true
+    - include: easy_pop
+
+  structlike_tag:
+    - scope: meta.tag
+      match: '{{identifier}}(?=\s*[^\s\{])'
+      pop: true
+    - scope: entity.name.struct
+      match: '{{identifier}}'
+      pop: true
+    - include: easy_pop
+
+  type_context:
+    - include: basic_types
+    - scope: meta.storage
+      match: '{{identifier}}(?!\s*[,;\)])'
+      set: after_typename
+    - include: easy_pop
+
+  strong_type_context:
+    - include: basic_types
+    - scope: meta.storage.maybe
+      match: '{{identifier}}'
+      set: after_typename
+    - include: easy_pop
+
+  after_typename:
+    - scope: storage
+      match: '\*'
+    - scope: keyword
+      match: '\b(?:{{modifiers}})\b'
+    - scope: storage.type
+      match: '\b(?:{{basic_types}}|{{int_types}})\b'
+    - include: easy_pop
+
+  structlike_block:
+    - scope: punctuation.begin
+      match: '\{'
+      set:
+        - scope: punctuation.end
+          match: '\}'
+          pop: true
+        - include: declaration
+        - scope: punctuation
+          match: ';'
+    - include: easy_pop
+
+  declarator_identifier:
+    - match: '{{identifier}}(?=\s*\()'
+      scope: entity.name.function
+      set: after_declarator_identifier
+    - match: '{{identifier}}'
+      scope: entity.name
+      set: after_declarator_identifier
+    - match: '\('
+      push:
+        - match: '\)'
+          set: after_declarator_identifier
+    - include: easy_pop
+
+  after_declarator_identifier:
+    - scope: punctuation
+      match: '\['
+      set: 
+        - scope: punctuation
+          match: '\]'
+          pop: true
+        - include: expressions
+    - include: parameter_group
+    - include: easy_pop
+
+  declarator_comma:
+    - scope: punctuation
+      match: ','
+      set: [declarator_comma, declarator_identifier]
+    - include: easy_pop
+
+  parameter_group:
+    - scope: punctuation
+      match: '\((?=.+\)\s*;)'
+      set: param_content
+    - scope: punctuation
+      match: '\('
+      set: universal_param_content
+    - include: easy_pop
+
+  parameter_identifier:
+    - match: '{{identifier}}'
+      scope: variable.parameter
+      pop: true
+    - scope: punctuation.begin
+      match: '\('
+      set: parameter_identifier_content
+    - include: easy_pop
+
+  parameter_identifier_content:
+    - match: '{{identifier}}'
+      scope: variable.parameter
+    - scope: punctuation.end
+      match: '\)'
+      pop: true
+
+  after_parameter_identifier:
+    - scope: punctuation.begin
+      match: '\('
+      push:
+        - scope: punctuation.end
+          match: '\)'
+          pop: true
+    - scope: punctuation.begin
+      match: '\['
+      push:
+        - scope: punctuation.end
+          match: '\]'
+          pop: true
+    - include: easy_pop
+
+  universal_param_content:
+    - meta_scope: meta.param.universal
+    - scope: punctuation
+      match: ','
+    - scope: punctuation
+      match: '\)'
+      pop: true
+    - match: '(?=\b({{modifiers}}|{{basic_types}}|{{int_types}}|struct|union)\b)'
+      set: [param_content, after_parameter_identifier, parameter_identifier, strong_type_context]
+    - match: '(?={{identifier}}\s*[\*[:alnum:]])'
+      set: [param_content, after_parameter_identifier, parameter_identifier, strong_type_context]
+    - scope: variable.parameter
+      match: '{{identifier}}'
+
+  param_content:
+    - meta_scope: meta.param
+    - scope: punctuation
+      match: ','
+    - scope: punctuation
+      match: '\)'
+      pop: true
+    - match: '(?={{identifier}})'
+      set: [param_content, after_parameter_identifier, parameter_identifier, strong_type_context]
+
+  # preprocessors
+
+  inline_escape:
     - scope: punctuation
       match: '\\\n'
     - match: '(?=\n)'
       pop: true
 
-  define-identifier:
-    - match: '{{identifier}}'
-      scope: identifier
-      pop: true
-
-  simple-parameters:
+  simple_parameter_group:
     - scope: punctuation
       match: '\('
-      set:
-        - scope: punctuation
-          match: ','
+      with_prototype:
         - scope: punctuation
           match: '\)'
           pop: true
-        - scope: variable.parameter
-          match: '{{identifier}}'
+      set: simple_param_content
+
+  simple_param_content:
+    - scope: punctuation
+      match: ','
+    - scope: variable.parameter
+      match: '{{identifier}}'
+
+  define_identifier:
+    - match: '{{identifier}}(?=\()'
+      scope: entity.name.function.macro
+      pop: true
+    - match: '{{identifier}}'
+      scope: identifier
+      pop: true
+    - include: easy_pop
+
+  after_macro_define:
+    - match: '(?=\()'
+      set: simple_parameter_group
+    - match: '\s+'
+      pop: true
+
