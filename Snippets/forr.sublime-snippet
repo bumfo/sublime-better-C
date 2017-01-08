@@ -1,0 +1,8 @@
+<snippet>
+  <description>for(;;--i)</description>
+  <content><![CDATA[for (int ${3:i} = ${2:n - 1}; $3 >= ${1:0}; --${3:i}) {
+  $0
+}]]></content>
+  <tabTrigger>forr</tabTrigger>
+  <scope>source.c11</scope>
+</snippet>
