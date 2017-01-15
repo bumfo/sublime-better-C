@@ -13,6 +13,7 @@ variables:
   c99_keywords: '{{c90_keywords}}|inline|restrict|_Bool|_Complex|_Imaginary'
   c11_keywords: '{{c99_keywords}}|_Alignas|_Alignof|_Atomic|_Generic|_Noreturn|_Static_assert|_Thread_local'
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+  identifier_lookahead: '(?=\b[[:alpha:]_])'
   basic_types: 'void|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
   int_types: 'u?int(8|16|32|64|128)_t'
   control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
@@ -21,6 +22,9 @@ variables:
   compiler_directive: 'inline|restrict|__restrict__|__restrict'
   modifiers: '{{storage_classes}}|{{type_qualifier}}|{{compiler_directive}}'
   preprocessors: 'if|ifdef|ifndef|else|endif|define|include|pragma'
+  compiler_macros: '__asm__|__volatile__|__attribute__'
+  non_storage_keywords: 'auto|break|case|continue|default|do|else|for|goto|if|return|sizeof|switch|union|while|_Alignas|_Alignof|_Atomic|_Generic|_Noreturn|_Static_assert|_Thread_local|{{compiler_macros}}'
+  non_modifier_keywords: 'auto|break|case|char|continue|default|do|double|else|enum|float|for|goto|if|int|long|return|short|signed|sizeof|struct|switch|typedef|union|unsigned|void|while|_Alignas|_Alignof|_Atomic|_Generic|_Noreturn|_Static_assert|_Thread_local|{{compiler_macros}}'
 
 contexts:
 
@@ -34,7 +38,15 @@ contexts:
 
   global:
     - include: preprocessors
-    - include: statements
+    - include: typedef_declaration
+    - include: non_storage_keywords
+    - include: strong_declaration
+    - include: statement_group
+    - include: expressions
+    - scope: punctuation
+      match: ';'
+    - scope: punctuation.unmatched
+      match: '\}'
 
 # preprocessors
 
@@ -72,7 +84,7 @@ contexts:
 # modules
 
   statements:
-    - include: typedef
+    - include: typedef_declaration
     - include: declaration
     - scope: storage.modifier
       match: '\b(?:{{modifiers}})\b'
@@ -80,17 +92,27 @@ contexts:
       match: '\b(?:{{control_keywords}})\b'
     - include: expressions
 
+  statement_group:
+    - scope: punctuation.begin
+      match: '\{'
+      push:
+        - scope: punctuation.end
+          match: '\}'
+          pop: true
+        - include: statement_group
+        - include: preprocessors
+        - include: statements
+
   expressions:
     - include: punctuations
     - scope: keyword
       match: '[+\-*/=!%\^&|:?><~]'
     - include: types
     - scope: keyword.other
-      match: '\b(?:{{c11_keywords}})\b'
+      match: '\b(?:{{c11_keywords}}|{{compiler_macros}})\b'
     - include: constants
     - include: strings
     - include: numbers
-
     - match: '(?={{identifier}}\s*\()'
       push:
         - include: scope:source.c#c99
@@ -113,6 +135,10 @@ contexts:
   constants:
     - scope: constant.language.c
       match: \b(NULL|true|false|TRUE|FALSE)\b
+
+  non_storage_keywords:
+    - scope: keyword.other
+      match: '\b(?:{{non_storage_keywords}})\b'
 
   comments:
     - scope: comment.block.c
@@ -142,10 +168,18 @@ contexts:
         - match: (?=\n)
           pop: true
 
-  typedef:
+  declaration:
+    - match: '(?=\b({{modifiers}}|{{basic_types}}|{{int_types}}|struct|union)\b)'
+      push: [declarator_comma, after_declarator_context, declarator_context, type_context]
+  
+  strong_declaration:
+    - match: '{{identifier_lookahead}}'
+      push: [declarator_comma, after_declarator_context, declarator_context, type_context]
+
+  typedef_declaration:
     - scope: keyword
       match: '\b(typedef)\b'
-      set: [typedef_after_typename, type_context]
+      push: [typedef_declarator_comma, after_declarator_context, typedef_declarator_context, type_context]
 
   types:
     - match: '(?=\b({{modifiers}}|{{basic_types}}|{{int_types}}|struct|union)\b)'
@@ -158,11 +192,8 @@ contexts:
     - meta_include_prototype: false
 
   preprocessor_expressions:
+    - meta_scope: meta.inline
     - include: statements
-
-  declaration:
-    - match: '(?=\b({{modifiers}}|{{basic_types}}|{{int_types}}|struct|union)\b)'
-      push: [declarator_comma, declarator_identifier, type_context]
 
   basic_types:
     - scope: keyword
@@ -174,6 +205,27 @@ contexts:
       match: '\b(struct|union)\b'
       set: [after_typename, structlike_block, structlike_tag]
 
+  type_modifiers:
+    - scope: storage
+      match: '\*'
+    - scope: keyword
+      match: '\b(?:{{modifiers}})\b'
+
+  parameter_group:
+    - scope: punctuation
+      match: '\((?=.+\)\s*;)'
+      set: param_context
+    - scope: punctuation
+      match: '\('
+      set: universal_param_context
+    - include: easy_pop
+
+  simple_parameter_group:
+    - scope: punctuation
+      match: '\('
+      set: simple_param_context
+    - include: easy_pop
+
 # contexts
 
   easy_pop:
@@ -182,13 +234,9 @@ contexts:
 
   # types
 
-  typedef_after_typename:
-    - scope: entity.name.type
-      match: '{{identifier}}'
-      pop: true
-    - include: easy_pop
-
   structlike_tag:
+    - match: '(?={{c11_keywords}})'
+      pop: true
     - scope: meta.tag
       match: '{{identifier}}(?=\s*[^\s\{])'
       pop: true
@@ -199,6 +247,8 @@ contexts:
 
   type_context:
     - include: basic_types
+    - match: '(?={{non_storage_keywords}})'
+      pop: true
     - scope: meta.storage
       match: '{{identifier}}(?!\s*[,;\)])'
       set: after_typename
@@ -206,16 +256,15 @@ contexts:
 
   strong_type_context:
     - include: basic_types
+    - match: '(?={{non_storage_keywords}})'
+      pop: true
     - scope: meta.storage.maybe
       match: '{{identifier}}'
       set: after_typename
     - include: easy_pop
 
   after_typename:
-    - scope: storage
-      match: '\*'
-    - scope: keyword
-      match: '\b(?:{{modifiers}})\b'
+    - include: type_modifiers
     - scope: storage.type
       match: '\b(?:{{basic_types}}|{{int_types}})\b'
     - include: easy_pop
@@ -227,82 +276,160 @@ contexts:
         - scope: punctuation.end
           match: '\}'
           pop: true
-        - include: declaration
+        - include: strong_declaration
         - scope: punctuation
           match: ';'
     - include: easy_pop
 
-  declarator_identifier:
+  declarator_context:
+    - match: '(?={{non_modifier_keywords}})'
+      pop: true
     - match: '{{identifier}}(?=\s*\()'
       scope: entity.name.function
-      set: after_declarator_identifier
+      set: after_function_declarator_context
     - match: '{{identifier}}'
       scope: entity.name
-      set: after_declarator_identifier
-    - match: '\('
-      push:
-        - match: '\)'
-          set: after_declarator_identifier
+      pop: true
+    - scope: punctuation.declarator
+      match: '\('
+      set: [after_declarator_context, declarator_parentheses_context]
     - include: easy_pop
 
-  after_declarator_identifier:
+  typedef_declarator_context:
+    - match: '(?={{non_storage_keywords}})'
+      pop: true
+    - scope: entity.name.type
+      match: '{{identifier}}'
+      pop: true
+    - scope: punctuation.declarator
+      match: '\('
+      set: [after_declarator_context, typedef_declarator_parentheses_context]
+    - include: easy_pop
+
+  param_declarator_context:
+    - scope: variable.parameter
+      match: '{{identifier}}'
+      pop: true
+    - scope: punctuation.declarator
+      match: '\('
+      set: [after_declarator_context, param_declarator_parentheses_context]
+    - include: easy_pop
+
+  param_declarator_context_fake:
+    - scope: variable.fake_parameter
+      match: '{{identifier}}'
+      pop: true
+    - scope: punctuation.declarator
+      match: '\('
+      set: [after_declarator_context, param_declarator_parentheses_context]
+    - include: easy_pop
+
+  declarator_parentheses_context:
+    - include: type_modifiers
+    - scope: punctuation.declarator
+      match: '\)'
+      pop: true
+    - scope: punctuation.declarator
+      match: '\('
+      push: [after_declarator_context, declarator_parentheses_context]
+    - match: '(?={{non_modifier_keywords}})'
+      pop: true
+    - match: '{{identifier}}(?=\s*\()'
+      scope: entity.name.function
+      push: [after_declarator_context, after_function_declarator_context]
+    - match: '{{identifier}}'
+      scope: entity.name
+      push: after_declarator_context
+    - match: '(?=\S)'
+      set: expression_group_context
+
+  typedef_declarator_parentheses_context:
+    - include: type_modifiers
+    - scope: punctuation.declarator
+      match: '\)'
+      pop: true
+    - scope: punctuation.declarator
+      match: '\('
+      push: [after_declarator_context, typedef_declarator_parentheses_context]
+    - scope: entity.name.type
+      match: '{{identifier}}'
+      push: after_declarator_context
+
+  param_declarator_parentheses_context:
+    - include: type_modifiers
+    - scope: punctuation.declarator
+      match: '\)'
+      pop: true
+    - scope: punctuation.declarator
+      match: '\('
+      push: [after_declarator_context, param_declarator_parentheses_context]
+    - scope: variable.parameter
+      match: '{{identifier}}'
+      push: after_declarator_context
+    - match: '(?=\S)'
+      set: expression_group_context
+
+  after_declarator_context:
     - scope: punctuation
       match: '\['
-      set: 
-        - scope: punctuation
-          match: '\]'
-          pop: true
-        - include: expressions
-    - include: parameter_group
+      set: [after_declarator_context, bracket_context]
+    - scope: punctuation
+      match: '\('
+      set: [after_declarator_context, simple_param_context]
     - include: easy_pop
+
+  after_function_declarator_context:
+    - scope: punctuation
+      match: '\((?=[\s[:alnum:]_,\*\/]+(\)[\s\*\/]*([[:alnum:]_]|\{|$)|$))'
+      set: [after_declarator_context, universal_param_context]
+    - scope: punctuation
+      match: '\(' # match: '\((?=.*[^\s[:alnum:]_,].*\)[^\{]*(\{|$))'
+      set: [after_declarator_context, param_context]
+    - include: easy_pop
+
+  bracket_context:
+    - scope: punctuation.end
+      match: '\]'
+      pop: true
+    - scope: punctuation.begin
+      match: '\['
+      push: bracket_context
+    - include: expressions
+
+  expression_group_context:
+    - scope: punctuation.end
+      match: '\)'
+      pop: true
+    - scope: punctuation.begin
+      match: '\('
+      push: expression_group_context
+    - include: expressions
 
   declarator_comma:
     - scope: punctuation
       match: ','
-      set: [declarator_comma, declarator_identifier]
+      set: [declarator_comma, after_declarator_context, declarator_context]
     - include: easy_pop
 
-  parameter_group:
+  typedef_declarator_comma:
     - scope: punctuation
-      match: '\((?=.+\)\s*;)'
-      set: param_content
+      match: ','
+      set: [typedef_declarator_comma, after_declarator_context, typedef_declarator_context]
+    - include: easy_pop
+
+  param_context:
+    - meta_scope: meta.param
+    - scope: keyword.punctuation
+      match: '\.\.\.'
     - scope: punctuation
-      match: '\('
-      set: universal_param_content
-    - include: easy_pop
-
-  parameter_identifier:
-    - match: '{{identifier}}'
-      scope: variable.parameter
-      pop: true
-    - scope: punctuation.begin
-      match: '\('
-      set: parameter_identifier_content
-    - include: easy_pop
-
-  parameter_identifier_content:
-    - match: '{{identifier}}'
-      scope: variable.parameter
-    - scope: punctuation.end
+      match: ','
+    - scope: punctuation
       match: '\)'
       pop: true
+    - match: '{{identifier_lookahead}}'
+      set: [param_context, after_declarator_context, param_declarator_context, strong_type_context]
 
-  after_parameter_identifier:
-    - scope: punctuation.begin
-      match: '\('
-      push:
-        - scope: punctuation.end
-          match: '\)'
-          pop: true
-    - scope: punctuation.begin
-      match: '\['
-      push:
-        - scope: punctuation.end
-          match: '\]'
-          pop: true
-    - include: easy_pop
-
-  universal_param_content:
+  universal_param_context:
     - meta_scope: meta.param.universal
     - scope: punctuation
       match: ','
@@ -310,21 +437,21 @@ contexts:
       match: '\)'
       pop: true
     - match: '(?=\b({{modifiers}}|{{basic_types}}|{{int_types}}|struct|union)\b)'
-      set: [param_content, after_parameter_identifier, parameter_identifier, strong_type_context]
+      set: [param_context, after_declarator_context, param_declarator_context, strong_type_context]
     - match: '(?={{identifier}}\s*[\*[:alnum:]])'
-      set: [param_content, after_parameter_identifier, parameter_identifier, strong_type_context]
+      set: [param_context, after_declarator_context, param_declarator_context, strong_type_context]
     - scope: variable.parameter
       match: '{{identifier}}'
 
-  param_content:
+  simple_param_context:
     - meta_scope: meta.param
     - scope: punctuation
       match: ','
     - scope: punctuation
       match: '\)'
       pop: true
-    - match: '(?={{identifier}})'
-      set: [param_content, after_parameter_identifier, parameter_identifier, strong_type_context]
+    - match: '{{identifier_lookahead}}'
+      set: [simple_param_context, after_declarator_context, param_declarator_context_fake, strong_type_context]
 
   # preprocessors
 
@@ -334,16 +461,16 @@ contexts:
     - match: '(?=\n)'
       pop: true
 
-  simple_parameter_group:
+  macro_parameter_group:
     - scope: punctuation
       match: '\('
       with_prototype:
         - scope: punctuation
           match: '\)'
           pop: true
-      set: simple_param_content
+      set: macro_param_content
 
-  simple_param_content:
+  macro_param_content:
     - scope: punctuation
       match: ','
     - scope: variable.parameter
@@ -360,7 +487,7 @@ contexts:
 
   after_macro_define:
     - match: '(?=\()'
-      set: simple_parameter_group
+      set: macro_parameter_group
     - match: '\s+'
       pop: true
 
