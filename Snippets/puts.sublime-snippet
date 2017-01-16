@@ -1,0 +1,6 @@
+<snippet>
+	<description>puts …</description>
+	<content><![CDATA[puts("${0:hi}");]]></content>
+	<tabTrigger>puts</tabTrigger>
+	<scope>source.c11, source.c++11, source.c, source.objc, source.c++, source.objc++</scope>
+</snippet>
