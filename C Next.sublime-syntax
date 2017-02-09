@@ -5,7 +5,7 @@ name: C Next
 file_extensions:
   - c
   - h
-first_line_match: "-[*]-( Mode:)? C -[*]-"
+first_line_match: '-[*]-( Mode:)? C -[*]-'
 scope: source.c11
 
 variables:
@@ -26,7 +26,7 @@ variables:
   compiler_directive: 'inline|__restrict__|__restrict|_Noreturn'
   compiler_directive_extended: 'noreturn'
   modifiers: '{{storage_classes}}|{{type_qualifier}}|{{compiler_directive}}'
-  preprocessors: 'if|ifdef|ifndef|else|endif|define|include|pragma'
+  preprocessors: 'if|ifdef|ifndef|else|endif|define|include|pragma|error|warning'
   compiler_macros: '__asm__|__volatile__|__attribute__'
   compiler_macros_extended: 'asm'
   non_storage_keywords: 'auto|break|case|continue|default|do|else|for|goto|if|return|sizeof|switch|while|_Alignof|_Generic|_Static_assert|{{compiler_macros}}'
@@ -59,35 +59,38 @@ contexts:
 # preprocessors
 
   preprocessors:
-    - scope: punctuation
+    - scope: punctuation.preprocessor.c
       match: '^\s*#'
       with_prototype:
         - include: inline_escape
       push:
         - scope: meta.preprocessor.incomplete.c
-          match: '\bi(nc?)?\b\s*'
-        - scope: keyword
+          match: '\bi(nc?)?\b'
+        - scope: keyword.control.import.include.c
           match: \b(include)\b
           set:
-            - scope: punctuation
+            - meta_scope: meta.preprocessor.c
+            - scope: punctuation.definition.string.begin.c
               match: '"'
               set: string_content
               with_prototype:
-                - scope: punctuation
+                - scope: punctuation.definition.string.end.c
                   match: '"'
                   pop: true
-            - scope: punctuation
+            - scope: punctuation.definition.string.begin.c
               match: '<'
               set: string_content
               with_prototype:
-                - scope: punctuation
+                - scope: punctuation.definition.string.end.c
                   match: '>'
                   pop: true
-        - scope: keyword
+        - scope: keyword.control.import.define.c
           match: \b(define)\b
           set: [preprocessor_expressions, after_macro_define, define_identifier]
-        - scope: keyword
+        - scope: keyword.control.import.other.c
           match: \b({{preprocessors}})\b
+          set:
+            - meta_scope: meta.preprocessor.c
 
 # modules
 
@@ -113,9 +116,11 @@ contexts:
 
   expressions:
     - include: punctuations
-    - scope: keyword
+    - scope: keyword.operator
       match: '[+\-*/=!%\^&|:?><~]'
     - include: types
+    - scope: keyword.operator.word.c
+      match: '\b(?:sizeof)\b'
     - scope: keyword.other
       match: '\b(?:{{c11_keywords}}|{{compiler_macros}})\b'
     - include: constants
@@ -200,7 +205,7 @@ contexts:
     - meta_include_prototype: false
 
   preprocessor_expressions:
-    - meta_scope: meta.inline
+    - meta_content_scope: meta.preprocessor.macro.c
     - include: statements
 
   std_types:
@@ -293,25 +298,32 @@ contexts:
         - scope: punctuation.end
           match: '\}'
           pop: true
-        - scope: keyword
+        - scope: keyword.operator
           match: '='
         - include: expressions
-        - scope: punctuation
+        - scope: punctuation.separator
           match: ','
     - include: easy_pop
-
-# contexts
 
   easy_pop:
     - match: '(?=\S)'
       pop: true
 
+  keyword_pop:
+    - match: '(?=\b(?:{{non_storage_keywords}})\b)'
+      pop: true
+
+  strict_keyword_pop:
+    - match: '(?=\b(?:{{non_modifier_keywords}})\b)'
+      pop: true
+
+# contexts
+
   # types
 
   type_context:
     - include: std_types
-    - match: '(?={{non_storage_keywords}})'
-      pop: true
+    - include: keyword_pop
     - scope: meta.storage
       match: '{{identifier}}(?!\s*[,;\)=])'
       set: after_type_specifier
@@ -319,8 +331,7 @@ contexts:
 
   strong_type_context:
     - include: std_types
-    - match: '(?={{non_storage_keywords}})'
-      pop: true
+    - include: keyword_pop
     - scope: meta.storage.maybe
       match: '{{identifier}}'
       set: after_type_specifier
@@ -334,13 +345,12 @@ contexts:
     - include: easy_pop
 
   declarator_context:
-    - match: '(?={{non_modifier_keywords}})'
-      pop: true
+    - include: strict_keyword_pop
     - match: '{{identifier}}(?=\s*\()'
       scope: entity.name.function
       set: after_function_declarator
     - match: '{{identifier}}'
-      scope: entity.name
+      scope: entity.name.variable
       pop: true
     - scope: punctuation.declarator
       match: '\('
@@ -348,8 +358,7 @@ contexts:
     - include: easy_pop
 
   typedef_declarator_context:
-    - match: '(?={{non_storage_keywords}})'
-      pop: true
+    - include: keyword_pop
     - scope: entity.name.type
       match: '{{identifier}}'
       pop: true
@@ -384,8 +393,7 @@ contexts:
     - scope: punctuation.declarator
       match: '\('
       push: [after_declarator, declarator_parentheses_context]
-    - match: '(?={{non_modifier_keywords}})'
-      pop: true
+    - include: strict_keyword_pop
     - match: '{{identifier}}(?=\s*\()'
       scope: entity.name.function
       push: [after_declarator, after_function_declarator]
@@ -508,16 +516,16 @@ contexts:
   # preprocessors
 
   inline_escape:
-    - scope: punctuation
+    - scope: punctuation.separator.continuation.c
       match: '\\\n'
     - match: '(?=\n)'
       pop: true
 
   macro_parameter_group:
-    - scope: punctuation
+    - scope: punctuation.definition.group.begin.c
       match: '\('
       with_prototype:
-        - scope: punctuation
+        - scope: punctuation.definition.group.end.c
           match: '\)'
           pop: true
       set: macro_param_content
@@ -530,10 +538,10 @@ contexts:
 
   define_identifier:
     - match: '{{identifier}}(?=\()'
-      scope: entity.name.function.macro
+      scope: entity.name.function.macro.c
       pop: true
     - match: '{{identifier}}'
-      scope: identifier
+      scope: entity.name.constant.preprocessor.c
       pop: true
     - include: easy_pop
 
