@@ -67,9 +67,6 @@ contexts:
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       set: after-typeid
-    # - scope: storage.type.maybe
-    #   match: '{{identifier}}'
-    #   set: after-typeid
     - match: '(?=\S)'
       set: [after-typeid, scoped-maybe-type]
 
@@ -82,9 +79,6 @@ contexts:
       push: [after-typeid, scoped-maybe-type-then]
     - match: '(?={{identifier}})'
       push: [after-typeid, scoped-maybe-type-then]
-    # - scope: storage.type.maybe
-    #   match: '{{identifier}}'
-    #   push: after-typeid
 
   after-typeid:
     - scope: storage.modifier.c++
@@ -205,9 +199,20 @@ contexts:
 
   free-identifiers:
     - match: '(?={{scopable_identifier}}\s*\()'
-      push: scoped-function-variable
+      push: [argument-paren, scoped-function-variable]
     - match: '(?={{scopable_identifier}}\s*{{template_lookahead}}\s*\()'
-      push: [template-angle-paren, scoped-function-variable]
+      push: [argument-paren, template-angle-paren, scoped-function-variable]
+
+  argument-paren:
+    - scope: punctuation
+      match: '\('
+      set: 
+        - scope: punctuation.separator
+          match: ','
+        - include: expressions
+        - scope: punctuation
+          match: '\)'
+          pop: true
 
   declar-after-typeid:
     - match: ''
