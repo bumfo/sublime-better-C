@@ -86,6 +86,9 @@ contexts:
     - scope: storage.modifier.c++
       match: '{{decl_specifier_no_type}}|{{cv_qualifier}}'
       set: after-typeid
+    - scope: storage.type
+      match: '\b(?:{{basic_types}})\b'
+      push: after-typeid
     - scope: punctuation
       match: '(?=<)'
       set: [ptr-operator, template-angle-paren]
