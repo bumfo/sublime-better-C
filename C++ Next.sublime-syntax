@@ -67,20 +67,24 @@ contexts:
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       set: after-typeid
-    # - scope: meta.maybe.type
+    # - scope: storage.type.maybe
     #   match: '{{identifier}}'
     #   set: after-typeid
     - match: '(?=\S)'
       set: [after-typeid, scoped-maybe-type]
 
   typenames:
-    - include: scopables
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       push: after-typeid
-    - scope: meta.maybe.type
-      match: '{{identifier}}'
-      push: after-typeid
+    - scope: punctuation
+      match: '::'
+      push: [after-typeid, scoped-maybe-type-then]
+    - match: '(?={{identifier}})'
+      push: [after-typeid, scoped-maybe-type-then]
+    # - scope: storage.type.maybe
+    #   match: '{{identifier}}'
+    #   push: after-typeid
 
   after-typeid:
     - scope: storage.modifier.c++
@@ -153,13 +157,13 @@ contexts:
       set: scoped-maybe-type-then
 
   scoped-maybe-type-then:
-    - scope: meta.maybe.type.namespace
+    - scope: storage.type.maybe.namespace
       match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
       set:
         - scope: punctuation
           match: '::'
           set: scoped-maybe-type
-    - scope: meta.maybe.type
+    - scope: storage.type.maybe
       match: '{{identifier}}'
       pop: true
     - match: '(?=\S)'
@@ -172,10 +176,10 @@ contexts:
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       push: declar-after-typeid
-    - scope: meta.maybe.type
+    - scope: storage.type.maybe
       match: '(?={{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_])'
       push: [declar-after-typeid, scoped-maybe-type]
-    - scope: meta.maybe.type
+    - scope: storage.type.maybe
       match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
       push: [declar-after-typeid, scoped-maybe-type]
 
@@ -251,9 +255,9 @@ contexts:
     - scope: keyword.operator
       match: '='
       set: 
-        - include: expressions
         - include: declar-separator
         - include: statement-terminator
+        - include: expressions
     - match: '(?=\S)'
       pop: true
 
@@ -325,6 +329,8 @@ contexts:
     - include: numbers
     - include: expr-groups
     - include: free-identifiers
+    - scope: keyword.comma
+      match: ','
 
   expr-group:
     - scope: punctuation
