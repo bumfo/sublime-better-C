@@ -48,6 +48,10 @@ variables:
 
   basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
 
+  function_operators: '(?:new\s*\[\s*\]|delete\s*\[\s*\]|new\b|delete\b|~|!|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|\(\s*\)|\[\s*\])'
+  not_overloadable_operators: '\.|\.\*|\:\:'
+  operators: '{{not_overloadable_operators}}|{{function_operators}}'
+
 contexts:
 
   prototype:
@@ -198,6 +202,9 @@ contexts:
       pop: true
 
   free-identifiers:
+    - scope: keyword
+      match: '\b(?:operator)\b'
+      push: [argument-paren, operator-variable-function-name]
     - match: '(?={{scopable_identifier}}\s*\()'
       push: [argument-paren, scoped-function-variable]
     - match: '(?={{scopable_identifier}}\s*{{template_lookahead}}\s*\()'
@@ -223,8 +230,25 @@ contexts:
       push: ptr-operator
     - include: noptr-declarators
 
+  operator-variable-function-name:
+    - scope: variable.function.operator
+      match: '{{function_operators}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  operator-entity-function-name:
+    - scope: entity.name.function.operator
+      match: '{{function_operators}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
   noptr-declarator:
     - include: statement-terminator
+    - scope: keyword
+      match: '\b(?:operator)\b'
+      set: [after-declarator, parameter-paren, operator-entity-function-name]
     - scope: entity.name.function
       match: '{{identifier}}(?=\s*\()'
       set: [after-declarator, parameter-paren]
@@ -271,10 +295,92 @@ contexts:
       match: ','
       set: [noptr-declarator, ptr-operator]
 
+  param-declar-separator:
+    - scope: punctuation.separator
+      match: ','
+      pop: true
+
+  param-after-typeid:
+    - match: ''
+      set: [param-noptr-declarator, after-typeid]
+
+  param-ptr-declarators:
+    - match: '(?=[*&])'
+      push: ptr-operator
+    - include: param-noptr-declarators
+
+  param-noptr-declarator:
+    - include: param-declar-separator
+    - scope: variable.parameter.function
+      match: '{{identifier}}(?=\s*\()'
+      set: [param-after-declarator, parameter-paren]
+    - scope: variable.parameter
+      match: '{{identifier}}'
+      set: param-after-declarator
+    - scope: punctuation
+      match: '\('
+      set:
+        - include: param-ptr-declarators
+        - scope: punctuation
+          match: '\)'
+          set: param-after-declarator
+    - match: '(?=\S)'
+      pop: true
+
+  param-noptr-declarators:
+    - scope: variable.parameter.function
+      match: '{{identifier}}(?=\s*\()'
+      push: [param-after-declarator, parameter-paren]
+    - scope: variable.parameter
+      match: '{{identifier}}'
+      push: param-after-declarator
+    - match: '\('
+      push:
+        - include: param-ptr-declarators
+        - match: '\)'
+          set: param-after-declarator
+
+  param-after-noptr-declarator:
+    - include: param-declar-separator
+    - include: statement-terminator
+    - scope: keyword.operator
+      match: '='
+      set: 
+        - include: param-declar-separator
+        - include: statement-terminator
+        - include: expressions
+    - match: '(?=\S)'
+      pop: true
+
+  param-after-declarator:
+    - match: '(?=\()'
+      set: [param-after-declarator, parameter-paren]
+    - scope: punctuation
+      match: '\['
+      set:
+        - include: expressions
+        - scope: punctuation
+          match: '\]'
+          set: param-after-declarator
+    - match: '(?=\S)'
+      set: param-after-noptr-declarator
+
+  param-typenames:
+    - scope: storage.modifier.c++
+      match: '{{decl_specifier_no_type}}|{{cv_qualifier}}'
+      push: [param-after-typeid, typeid]
+    - scope: storage.type
+      match: '\b(?:{{basic_types}})\b'
+      push: param-after-typeid
+    - scope: storage.type.maybe
+      match: '(?={{scopable_identifier}}\s*)'
+      push: [param-after-typeid, scoped-maybe-type]
+
   parameter-paren:
     - scope: punctuation
       match: '\('
       set:
+        - include: param-typenames
         - scope: punctuation
           match: '\)'
           pop: true
@@ -315,6 +421,8 @@ contexts:
     - include: expr-groups
     - include: statement-groups
     - include: expressions
+    - scope: punctuation.terminator
+      match: ';'
 
   statement-group:
     - scope: punctuation
@@ -334,7 +442,9 @@ contexts:
     - include: numbers
     - include: expr-groups
     - include: free-identifiers
-    - scope: keyword.comma
+    - scope: keyword.operator
+      match: '{{operators}}'
+    - scope: keyword.operator.comma
       match: ','
 
   expr-group:
