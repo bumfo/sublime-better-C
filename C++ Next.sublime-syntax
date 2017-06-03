@@ -23,7 +23,7 @@ scope: source.c++1z
 variables:
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
   identifier_lookahead: '(?=\b[[:alpha:]_])'
-  scopable_identifier: '({{identifier}}\s*::\s*)*{{identifier}}'
+  scopable_identifier: '(?:::\s*)?({{identifier}}\s*::\s*)*{{identifier}}'
   top_level_template_content: (?:(?:{{scopable_identifier}}\s*)(?:,\s*(?:{{scopable_identifier}}\s*)?)*)?
   template_lookahead: |-
     (?x)
@@ -40,10 +40,12 @@ variables:
   storage_class_specifier: 'register|static|thread_local|extern|mutable'
   function_specifier: 'inline|virtual|explicit'
   decl_specifier_no_type: '{{storage_class_specifier}}|{{function_specifier}}|friend|typedef|constexpr'
+
   class_specifier: 'class|struct'
   union_specifier: 'union'
   enum_specifier: 'enum'
   cv_qualifier: 'const|volatile'
+
   basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
 
 contexts:
@@ -55,6 +57,7 @@ contexts:
     - include: global
 
   global:
+    - include: preprocessor-others
     - include: declars
     - include: statement-groups
     # - scope: punctuation.unmatched
@@ -64,9 +67,11 @@ contexts:
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       set: after-typeid
-    - scope: meta.maybe.type
-      match: '{{identifier}}'
-      set: after-typeid
+    # - scope: meta.maybe.type
+    #   match: '{{identifier}}'
+    #   set: after-typeid
+    - match: '(?=\S)'
+      set: [after-typeid, scoped-maybe-type]
 
   typenames:
     - include: scopables
@@ -78,6 +83,9 @@ contexts:
       push: after-typeid
 
   after-typeid:
+    - scope: storage.modifier.c++
+      match: '{{decl_specifier_no_type}}|{{cv_qualifier}}'
+      set: after-typeid
     - scope: punctuation
       match: '(?=<)'
       set: [ptr-operator, template-angle-paren]
@@ -108,16 +116,25 @@ contexts:
           pop: true
 
   scopable:
+    - scope: punctuation
+      match: '::'
+      set: scopable-then
+    - match: '(?=\S)'
+      set: scopable-then
+
+  scopable-then:
     - scope: meta.identifier.namespace
       match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
       set:
         - scope: punctuation
           match: '::'
-          set: scopable
+          set: scopable-then
     - match: '(?=\S)'
       pop: true
 
   scopables:
+    - scope: punctuation
+      match: '::'
     - scope: meta.identifier.namespace
       match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
       push:
@@ -126,6 +143,13 @@ contexts:
           pop: true
 
   scoped-maybe-type:
+    - scope: punctuation
+      match: '::'
+      set: scoped-maybe-type-then
+    - match: '(?=\S)'
+      set: scoped-maybe-type-then
+
+  scoped-maybe-type-then:
     - scope: meta.maybe.type.namespace
       match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
       set:
@@ -139,23 +163,33 @@ contexts:
       pop: true
 
   declars:
+    - scope: storage.modifier.c++
+      match: '{{decl_specifier_no_type}}|{{cv_qualifier}}'
+      push: [declar-after-typeid, typeid]
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       push: declar-after-typeid
     - scope: meta.maybe.type
-      match: '(?={{scopable_identifier}}\s*(?:[*&]\s*)*\b[[:alpha:]_])'
+      match: '(?={{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_])'
       push: [declar-after-typeid, scoped-maybe-type]
     - scope: meta.maybe.type
       match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
       push: [declar-after-typeid, scoped-maybe-type]
 
   scoped-function-variable:
+    - scope: punctuation
+      match: '::'
+      set: scoped-function-variable-then
+    - match: '(?=\S)'
+      set: scoped-function-variable-then
+
+  scoped-function-variable-then:
     - scope: variable.function.namespace
       match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
       set:
         - scope: punctuation
           match: '::'
-          set: scoped-function-variable
+          set: scoped-function-variable-then
     - scope: variable.function
       match: '{{identifier}}'
       pop: true
@@ -214,6 +248,7 @@ contexts:
     - scope: keyword.operator
       match: '='
       set: 
+        - include: expressions
         - include: declar-separator
         - include: statement-terminator
     - match: '(?=\S)'
@@ -246,6 +281,7 @@ contexts:
     - scope: punctuation
       match: '\['
       set:
+        - include: expressions
         - scope: punctuation
           match: '\]'
           set: after-declarator
@@ -259,18 +295,20 @@ contexts:
 
 
 
-
+  statements:
+    - scope: keyword.control
+      match: '\b(?:{{control_keywords}})\b'
+    - include: free-identifiers
+    - include: declars
+    - include: expr-groups
+    - include: statement-groups
+    - include: expressions
 
   statement-group:
     - scope: punctuation
       match: '\{'
       set:
-        - scope: keyword.control
-          match: '\b(?:{{control_keywords}})\b'
-        - include: free-identifiers
-        - include: declars
-        - include: expr-groups
-        - include: statement-groups
+        - include: statements
         - scope: punctuation
           match: '\}'
           pop: true
@@ -279,11 +317,17 @@ contexts:
     - match: '(?=\{)'
       push: statement-group
 
+  expressions:
+    - include: strings
+    - include: numbers
+    - include: expr-groups
+    - include: free-identifiers
+
   expr-group:
     - scope: punctuation
       match: '\('
       set:
-        - include: expr-groups
+        - include: expressions
         - scope: punctuation
           match: '\)'
           pop: true
@@ -334,3 +378,112 @@ contexts:
             1: punctuation.separator.continuation.c++
         - match: (?=\n)
           pop: true
+
+
+  strings:
+    - include: unique-strings
+    - include: c-strings
+
+  numbers:
+    - include: unique-numbers
+    - match: '\b((0(x|X)[0-9a-fA-F]*(\.[0-9a-fA-F]+p-?\d+)?)|(([0-9]+\.?[0-9]*)|(\.[0-9]+))((e|E)(\+|-)?[0-9]+)?)(L|l|UL|ul|u|U|F|f|ll|LL|ull|ULL)?\b'
+      scope: constant.numeric.c++
+
+
+
+  c-strings:
+    - match: '(L|u8|u|U)?(")'
+      captures:
+        1: storage.type.string.c
+        2: punctuation.definition.string.begin.c
+      push:
+        - meta_scope: string.quoted.double.c
+        - match: '"'
+          scope: punctuation.definition.string.end.c
+          pop: true
+        - include: string_escaped_char
+        - include: string_placeholder
+    - match: "(L|u8|u|U)?(')"
+      captures:
+        1: storage.type.string.c
+        2: punctuation.definition.string.begin.c
+      push:
+        - meta_scope: string.quoted.single.c
+        - match: "'"
+          scope: punctuation.definition.string.end.c
+          pop: true
+        - include: string_escaped_char
+
+  string_escaped_char:
+    - match: '(\\)$\n'
+      captures:
+        1: punctuation.separator.continuation.c
+    - match: \\(?:\\|[abefnrtv\'"?]|[0-3][0-9]{0,2}|[4-7][0-9]?|x[a-fA-F0-9]+|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8})
+      scope: constant.character.escape.c
+    - match: \\.
+      scope: invalid.illegal.unknown-escape.c
+
+  string_placeholder:
+    - match: |-
+        (?x)%
+          (\d+\$)?                                      # field (argument #)
+          [#0\- +']*                                    # flags
+          [,;:_]?                                       # separator character (AltiVec)
+          ((-?\d+)|\*(-?\d+\$)?)?                       # minimum field width
+          (\.((-?\d+)|\*(-?\d+\$)?)?)?                  # precision
+          (hh|h|ll|l|j|t|z|q|L|vh|vl|v|hv|hl)?          # length modifier
+          (\[[^\]]+\]|[am]s|[diouxXDOUeEfFgGaACcSspn%]) # conversion type
+      scope: constant.other.placeholder.c
+    - match: "%"
+      scope: invalid.illegal.placeholder.c
+
+
+
+
+  preprocessor-others:
+    - match: ^\s*(#\s*(?:if|ifdef|ifndef|elif|else|line|pragma|undef))\b
+      captures:
+        1: keyword.control.import.c++
+      push:
+        - meta_scope: meta.preprocessor.c++
+        - include: scope:source.c#preprocessor-line-continuation
+        - include: scope:source.c#preprocessor-line-ending
+        - include: scope:source.c#preprocessor-comments
+        - match: \bdefined\b
+          scope: keyword.control.c++
+    - match: ^\s*(#\s*endif)\b
+      captures:
+        1: meta.preprocessor.c++ keyword.control.import.c++
+    - match: ^\s*(#\s*(?:error|warning))\b
+      captures:
+        1: keyword.control.import.error.c++
+      push:
+        - meta_scope: meta.preprocessor.diagnostic.c++
+        - include: scope:source.c#preprocessor-line-continuation
+        - include: scope:source.c#preprocessor-line-ending
+        - include: scope:source.c#preprocessor-comments
+        - include: strings
+        - match: '\S+'
+          scope: string.unquoted.c++
+    - match: ^\s*(#\s*(?:include|import))\b\s*
+      captures:
+        1: keyword.control.import.include.c++
+      push:
+        - meta_scope: meta.preprocessor.include.c++
+        - include: scope:source.c#preprocessor-line-continuation
+        - include: scope:source.c#preprocessor-line-ending
+        - include: scope:source.c#preprocessor-comments
+        - match: '"'
+          scope: punctuation.definition.string.begin.c++
+          push:
+            - meta_scope: string.quoted.double.include.c++
+            - match: '"'
+              scope: punctuation.definition.string.end.c++
+              pop: true
+        - match: <
+          scope: punctuation.definition.string.begin.c++
+          push:
+            - meta_scope: string.quoted.other.lt-gt.include.c++
+            - match: '>'
+              scope: punctuation.definition.string.end.c++
+              pop: true
