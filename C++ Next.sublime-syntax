@@ -23,7 +23,12 @@ scope: source.c++1z
 variables:
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
   identifier_lookahead: '(?=\b[[:alpha:]_])'
-  scopable_identifier: '(?:::\s*)?({{identifier}}\s*::\s*)*{{identifier}}'
+
+  path_lookahead_optional_content: (?:::\s*)?({{identifier}}\s*::\s*)*
+  path_lookahead_content: (?:::\s*)?({{identifier}}\s*::\s*)+
+  path_lookahead: '(?={{path_lookahead_content}})'
+
+  scopable_identifier: '{{path_lookahead_optional_content}}{{identifier}}'
   top_level_template_content: (?:(?:{{scopable_identifier}}\s*)(?:,\s*(?:{{scopable_identifier}}\s*)?)*)?
   template_lookahead: |-
     (?x)
@@ -37,19 +42,21 @@ variables:
   # basic_types: 'void|char|short|int|long|float|double|signed|unsigned'
   control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
 
-  storage_class_specifier: 'register|static|thread_local|extern|mutable'
-  function_specifier: 'inline|virtual|explicit'
-  decl_specifier_no_type: '{{storage_class_specifier}}|{{function_specifier}}|friend|typedef|constexpr'
+  storage_class_specifiers: 'register|static|thread_local|extern|mutable'
+  function_specifiers: 'inline|virtual|explicit'
+  decl_specifiers_no_type: '{{storage_class_specifiers}}|{{function_specifiers}}|friend|typedef|constexpr'
 
-  class_specifier: 'class|struct'
-  union_specifier: 'union'
-  enum_specifier: 'enum'
-  cv_qualifier: 'const|volatile'
+  class_specifiers: 'class'
+  struct_specifiers: 'struct'
+  union_specifiers: 'union'
+  enum_specifiers: 'enum'
+  cv_qualifiers: 'const|volatile'
+  struct_or_union_specifiers: 'struct|union'
 
   basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
 
   function_operators: '(?:new\s*\[\s*\]|delete\s*\[\s*\]|new\b|delete\b|~|!|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|\(\s*\)|\[\s*\])'
-  not_overloadable_operators: '\.|\.\*|\:\:'
+  not_overloadable_operators: '\.|\.\*|\:\:|#|##'
   operators: '{{not_overloadable_operators}}|{{function_operators}}'
 
 contexts:
@@ -62,12 +69,15 @@ contexts:
 
   global:
     - include: preprocessor-others
-    - include: declars
+    - include: global-declars
     - include: statement-groups
     # - scope: punctuation.unmatched
     #   match: '\}'
 
   typeid:
+    - scope: storage.type.struct-or-union
+      match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
+      set: [after-typeid, struct-or-union-head]
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       set: after-typeid
@@ -75,6 +85,9 @@ contexts:
       set: [after-typeid, scoped-maybe-type]
 
   typenames:
+    - scope: storage.type.struct-or-union
+      match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
+      push: [after-typeid, struct-or-union-head]
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       push: after-typeid
@@ -85,8 +98,11 @@ contexts:
       push: [after-typeid, scoped-maybe-type-then]
 
   after-typeid:
+    - scope: storage.type.struct-or-union
+      match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
+      set: [after-typeid, struct-or-union-head]
     - scope: storage.modifier.c++
-      match: '{{decl_specifier_no_type}}|{{cv_qualifier}}'
+      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
       set: after-typeid
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
@@ -160,16 +176,100 @@ contexts:
       set:
         - scope: punctuation
           match: '::'
-          set: scoped-maybe-type
+          set: scoped-maybe-type-then
     - scope: storage.type.maybe
       match: '{{identifier}}'
       pop: true
     - match: '(?=\S)'
       pop: true
 
-  declars:
+  scoped-constructor:
+    - scope: punctuation
+      match: '::'
+      set: scoped-constructor-then
+    - match: '(?=\S)'
+      set: scoped-constructor-then
+
+  scoped-constructor-then:
+    - scope: meta.entity.name.function.constructor.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scoped-constructor-then
+    - scope: meta.entity.name.function.constructor
+      match: '{{identifier}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  entity-name-function-constructor:
+    - meta_scope: entity.name.function.constructor
+    - match: ''
+      pop: true
+
+  scoped-destructor:
+    - scope: punctuation
+      match: '::'
+      set: scoped-destructor-then
+    - match: '(?=\S)'
+      set: scoped-destructor-then
+
+  scoped-destructor-then:
+    - scope: meta.entity.name.function.destructor.namespace
+      match: '{{identifier}}(?=\s*::\s*[[:alpha:]_~])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scoped-destructor-then
+    - scope: meta.entity.name.function.destructor
+      match: '~'
+    - scope: meta.entity.name.function.destructor
+      match: '{{identifier}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  entity-name-function-destructor:
+    - meta_scope: entity.name.function.destructor
+    - match: ''
+      pop: true
+
+  global-declars:
+    - match: '(?=({{identifier}})\s*::\s*\1\s*\s*\()'
+      push: [after-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
+    - scope: entity.name.function.destructor
+      match: '(?=({{identifier}})\s*::\s*~\s*\1\s*\()'
+      push: [after-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
+
+    - scope: storage.type.class
+      match: '\b(?:{{class_specifiers}})\b'
+      push: [global-declar-after-typeid, class-head]
+    - scope: storage.type.struct-or-union
+      match: '\b(?:{{struct_or_union_specifiers}})\b'
+      push: [global-declar-after-typeid, struct-or-union-head]
     - scope: storage.modifier.c++
-      match: '{{decl_specifier_no_type}}|{{cv_qualifier}}'
+      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
+      push: [global-declar-after-typeid, typeid]
+    - scope: storage.type
+      match: '\b(?:{{basic_types}})\b'
+      push: global-declar-after-typeid
+    - scope: storage.type.maybe
+      match: '(?={{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_])'
+      push: [global-declar-after-typeid, scoped-maybe-type]
+    - scope: storage.type.maybe
+      match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
+      push: [global-declar-after-typeid, scoped-maybe-type]
+
+  declars:
+    - scope: storage.type.class
+      match: '\b(?:{{class_specifiers}})\b'
+      push: [declar-after-typeid, class-head]
+    - scope: storage.type.struct-or-union
+      match: '\b(?:{{struct_or_union_specifiers}})\b'
+      push: [declar-after-typeid, struct-or-union-head]
+    - scope: storage.modifier.c++
+      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
       push: [declar-after-typeid, typeid]
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
@@ -225,6 +325,10 @@ contexts:
     - match: ''
       set: [noptr-declarator, after-typeid]
 
+  global-declar-after-typeid:
+    - match: ''
+      set: [global-noptr-declarator, after-typeid]
+
   ptr-declarators:
     - match: '(?=[*&])'
       push: ptr-operator
@@ -238,9 +342,77 @@ contexts:
       pop: true
 
   operator-entity-function-name:
-    - scope: entity.name.function.operator
+    - scope: meta.entity.name.function.operator
       match: '{{function_operators}}'
       pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  scoped-entity-name-function:
+    - scope: punctuation
+      match: '::'
+      set: scoped-entity-name-function-then
+    - match: '(?=\S)'
+      set: scoped-entity-name-function-then
+
+  scoped-entity-name-function-then:
+    - scope: meta.entity.name.function.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scoped-entity-name-function-then
+    - scope: keyword
+      match: '\b(?:operator)\b'
+      set:
+        - scope: meta.entity.name.function.operator
+          match: '{{function_operators}}'
+          pop: true
+        - match: '(?=\S)'
+          pop: true
+      # set: operator-entity-function-name
+    - scope: meta.entity.name.function
+      match: '{{identifier}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
+
+  global-declarator-id:
+    - scope: keyword
+      match: '\b(?:operator)\b'
+      set: [global-after-declarator-initializer, parameter-paren, entity-name-function-operator, operator-entity-function-name]
+    - scope: entity.name.function
+      match: '{{identifier}}(?=\s*\()'
+      set: [global-after-declarator-initializer, parameter-paren]
+    - scope: meta.identifier.global
+      match: '{{identifier}}'
+      set: global-after-declarator
+
+  entity-name-function-operator:
+    - meta_scope: entity.name.function.operator
+    - match: ''
+      pop: true
+
+  entity-name-function:
+    - meta_scope: entity.name.function
+    - match: ''
+      pop: true
+
+  global-noptr-declarator:
+    - include: statement-terminator
+    - match: '(?={{path_lookahead_content}}(?:\b(?:operator)\b\s*{{function_operators}})(?:\s*\())'
+      set: [global-after-declarator-initializer, parameter-paren, entity-name-function-operator, scoped-entity-name-function]
+    - match: '(?={{path_lookahead_content}}(?:{{identifier}})(?:\s*\())'
+      set: [global-after-declarator-initializer, parameter-paren, entity-name-function, scoped-entity-name-function]
+    - include: global-declarator-id
+    - scope: punctuation
+      match: '\('
+      set:
+        - include: ptr-declarators
+        - scope: punctuation
+          match: '\)'
+          set: global-after-declarator
     - match: '(?=\S)'
       pop: true
 
@@ -248,10 +420,10 @@ contexts:
     - include: statement-terminator
     - scope: keyword
       match: '\b(?:operator)\b'
-      set: [after-declarator, parameter-paren, operator-entity-function-name]
+      set: [after-declarator-initializer, parameter-paren, entity-name-function-operator, operator-entity-function-name]
     - scope: entity.name.function
-      match: '{{identifier}}(?=\s*\()'
-      set: [after-declarator, parameter-paren]
+      match: '{{identifier}}(?=\s*\(\))'
+      set: [after-declarator-initializer, parameter-paren]
     - scope: meta.identifier
       match: '{{identifier}}'
       set: after-declarator
@@ -268,7 +440,7 @@ contexts:
   noptr-declarators:
     - scope: entity.name.function
       match: '{{identifier}}(?=\s*\()'
-      push: [after-declarator, parameter-paren]
+      push: [after-declarator-initializer, parameter-paren]
     - scope: meta.identifier
       match: '{{identifier}}'
       push: after-declarator
@@ -277,18 +449,6 @@ contexts:
         - include: ptr-declarators
         - match: '\)'
           set: after-declarator
-
-  after-noptr-declarator:
-    - include: declar-separator
-    - include: statement-terminator
-    - scope: keyword.operator
-      match: '='
-      set: 
-        - include: declar-separator
-        - include: statement-terminator
-        - include: expressions
-    - match: '(?=\S)'
-      pop: true
 
   declar-separator:
     - scope: punctuation.separator
@@ -366,8 +526,11 @@ contexts:
       set: param-after-noptr-declarator
 
   param-typenames:
+    - scope: storage.type.struct-or-union
+      match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
+      push: [param-after-typeid, struct-or-union-head]
     - scope: storage.modifier.c++
-      match: '{{decl_specifier_no_type}}|{{cv_qualifier}}'
+      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
       push: [param-after-typeid, typeid]
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
@@ -393,9 +556,36 @@ contexts:
     - match: '(?=\()'
       push: parameter-paren
 
+  # after-declarator-initializer:
+  #   - include: declar-separator
+  #   - include: statement-terminator
+
+  after-declarator-initializer:
+    - include: declar-separator
+    - include: statement-terminator
+    - match: '(?=\S)'
+      pop: true
+
+  after-declarator-common:
+    - scope: keyword.operator
+      match: '='
+      set: 
+        - include: brace-initializer
+        - include: declar-separator
+        - include: statement-terminator
+        - include: expressions
+    - include: after-declarator-initializer
+    # - match: '(?=\S)'
+    #   pop: true
+
+  initializer-argument-contents:
+    - scope: punctuation.separator
+      match: ','
+    - include: expressions
+
   after-declarator:
-    - match: '(?=\()'
-      set: [after-declarator, parameter-paren]
+    - match: '(?=\(\))'
+      set: [after-declarator-initializer, parameter-paren]
     - scope: punctuation
       match: '\['
       set:
@@ -403,14 +593,61 @@ contexts:
         - scope: punctuation
           match: '\]'
           set: after-declarator
+    - match: '(?=\{)'
+      set: [after-declarator-initializer, brace-initializer]
+    - match: '(?=\()'
+      set: [after-declarator-initializer, parens-initilizer]
+    - include: after-declarator-common
+
+  parens-initilizer:
+    - scope: punctuation.parens.initializer
+      match: '\('
+      set:
+        - include: initializer-argument-contents
+        - scope: punctuation.parens.initializer
+          match: '\)'
+          pop: true
+
+  brace-initializers:
+    - match: '(?=\{)'
+      push: brace-initializer
+
+  brace-initializer:
+    - scope: punctuation.braces.initializer
+      match: '\{'
+      set:
+        - include: brace-initializers
+        - include: initializer-argument-contents
+        - scope: punctuation.braces.initializer
+          match: '\}'
+          pop: true
+
+  global-after-declarator-initializer:
+    - include: declar-separator
+    - include: statement-terminator
     - match: '(?=\S)'
-      set: after-noptr-declarator
+      pop: true
+
+  global-after-declarator:
+    - match: '(?=\()'
+      set: [global-after-declarator-initializer, parameter-paren]
+    - scope: punctuation
+      match: '\['
+      set:
+        - include: expressions
+        - scope: punctuation
+          match: '\]'
+          set: global-after-declarator
+    - match: '(?=\{)'
+      set: [global-after-declarator-initializer, brace-initializer]
+    - match: '(?=\()'
+      set: [global-after-declarator-initializer, parens-initilizer]
+    - include: after-declarator-common
 
   statement-terminator:
     - scope: punctuation
       match: ';'
       pop: true
-
 
 
   statements:
@@ -461,10 +698,74 @@ contexts:
       push: expr-group
 
 
+  class-head-name:
+    # - meta_scope: entity.name.function
+    - scope: entity.name.class
+      match: ({{identifier}})
+      set: [class-constructor-name, test, test1]
+    - match: '(?=\S)'
 
+  test1:
+    - scope: punctuation
+      match: '\{'
+      pop: true
 
+  after-parameter-paren:
+    - scope: punctuation
+      match: ';'
+      pop: true
+    - include: statement-group
 
+  class-constructor-name:
+    - scope: punctuation
+      match: '\}'
+      pop: true
+    - scope: entity.name.function.destructor
+      match: (?<=\~)([a-z]+)
+      set: [class-constructor-name, test, after-parameter-paren, parameter-paren]
+    - scope: entity.name.function.constructor
+      match: ([a-z]+)
+      set: [class-constructor-name, test, after-parameter-paren, parameter-paren]
+    - match: '(?=\S)'
 
+  test:
+    - include: statement-groups
+    - match: '(?=\})'
+      pop: true
+    - scope: entity.name.function.destructor
+      match: ~(?=\b\1\b)
+      pop: true
+    - scope: entity.name.function.constructor
+      match: (?=\b\1\b)
+      pop: true
+    - include: declars
+
+  class-head:
+    - include: class-head-name
+    - match: '(?=\S)'
+      pop: true
+
+  struct-or-union-head:
+    - scope: entity.name.struct-or-union
+      match: '({{identifier}})'
+      set: class-or-struct-or-union-body
+    - match: '(?=\S)'
+      set: class-or-struct-or-union-body
+
+  class-or-struct-or-union-body:
+    - scope: punctuation
+      match: '\{'
+      set:
+        - include: declars
+        - scope: punctuation
+          match: '\}'
+          pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  constructors-or-destructors:
+    - scope: entity.name.function.constructor
+      match: '\1'
 
 
 
