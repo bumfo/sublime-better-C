@@ -1,0 +1,336 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: C++ Next
+file_extensions:
+  - cc
+  - cpp
+  - cp
+  - cxx
+  - c++
+  - C
+  - h
+  - hh
+  - hpp
+  - hxx
+  - h++
+  - inl
+  - ipp
+first_line_match: '-\*- C\+\+(1z)? -\*-'
+
+scope: source.c++1z
+
+variables:
+  identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+  identifier_lookahead: '(?=\b[[:alpha:]_])'
+  scopable_identifier: '({{identifier}}\s*::\s*)*{{identifier}}'
+  top_level_template_content: (?:(?:{{scopable_identifier}}\s*)(?:,\s*(?:{{scopable_identifier}}\s*)?)*)?
+  template_lookahead: |-
+    (?x)
+    (?:
+      (?:<\s*{{top_level_template_content}}>)|
+      (?:<\s*
+        (?:(?:{{scopable_identifier}}\s*)(?:,\s*{{scopable_identifier}}\s*)*<\s*)*
+        (?:(?:{{scopable_identifier}}\s*)(?:,\s*{{scopable_identifier}}\s*)*<\s*{{top_level_template_content}}>\s*)(?:,\s*(?:{{scopable_identifier}}\s*(?:<\s*{{top_level_template_content}}>\s*)?)?)*
+      >)
+    )
+  # basic_types: 'void|char|short|int|long|float|double|signed|unsigned'
+  control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
+
+  storage_class_specifier: 'register|static|thread_local|extern|mutable'
+  function_specifier: 'inline|virtual|explicit'
+  decl_specifier_no_type: '{{storage_class_specifier}}|{{function_specifier}}|friend|typedef|constexpr'
+  class_specifier: 'class|struct'
+  union_specifier: 'union'
+  enum_specifier: 'enum'
+  cv_qualifier: 'const|volatile'
+  basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
+
+contexts:
+
+  prototype:
+    - include: comments
+
+  main:
+    - include: global
+
+  global:
+    - include: declars
+    - include: statement-groups
+    # - scope: punctuation.unmatched
+    #   match: '\}'
+
+  typeid:
+    - scope: storage.type
+      match: '\b(?:{{basic_types}})\b'
+      set: after-typeid
+    - scope: meta.maybe.type
+      match: '{{identifier}}'
+      set: after-typeid
+
+  typenames:
+    - include: scopables
+    - scope: storage.type
+      match: '\b(?:{{basic_types}})\b'
+      push: after-typeid
+    - scope: meta.maybe.type
+      match: '{{identifier}}'
+      push: after-typeid
+
+  after-typeid:
+    - scope: punctuation
+      match: '(?=<)'
+      set: [ptr-operator, template-angle-paren]
+    - match: '(?=[*&])'
+      set: ptr-operator
+    - match: '(?=\S)'
+      pop: true
+
+  ptr-operator:
+    - scope: keyword.pointer
+      match: '[*]'
+    - scope: keyword.reference.rvalue
+      match: '[&]{2}'
+    - scope: keyword.reference.lvalue
+      match: '[&]'
+    - match: '(?=\S)'
+      pop: true
+
+  template-angle-paren:
+    - scope: punctuation
+      match: '<'
+      set:
+        - include: typenames
+        - scope: punctuation
+          match: ','
+        - scope: punctuation
+          match: '>'
+          pop: true
+
+  scopable:
+    - scope: meta.identifier.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scopable
+    - match: '(?=\S)'
+      pop: true
+
+  scopables:
+    - scope: meta.identifier.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      push:
+        - scope: punctuation
+          match: '::'
+          pop: true
+
+  scoped-maybe-type:
+    - scope: meta.maybe.type.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scoped-maybe-type
+    - scope: meta.maybe.type
+      match: '{{identifier}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  declars:
+    - scope: storage.type
+      match: '\b(?:{{basic_types}})\b'
+      push: declar-after-typeid
+    - scope: meta.maybe.type
+      match: '(?={{scopable_identifier}}\s*(?:[*&]\s*)*\b[[:alpha:]_])'
+      push: [declar-after-typeid, scoped-maybe-type]
+    - scope: meta.maybe.type
+      match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
+      push: [declar-after-typeid, scoped-maybe-type]
+
+  scoped-function-variable:
+    - scope: variable.function.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scoped-function-variable
+    - scope: variable.function
+      match: '{{identifier}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  free-identifiers:
+    - match: '(?={{scopable_identifier}}\s*\()'
+      push: scoped-function-variable
+    - match: '(?={{scopable_identifier}}\s*{{template_lookahead}}\s*\()'
+      push: [template-angle-paren, scoped-function-variable]
+
+  declar-after-typeid:
+    - match: ''
+      set: [noptr-declarator, after-typeid]
+
+  ptr-declarators:
+    - match: '(?=[*&])'
+      push: ptr-operator
+    - include: noptr-declarators
+
+  noptr-declarator:
+    - include: statement-terminator
+    - scope: entity.name.function
+      match: '{{identifier}}(?=\s*\()'
+      set: [after-declarator, parameter-paren]
+    - scope: meta.identifier
+      match: '{{identifier}}'
+      set: after-declarator
+    - scope: punctuation
+      match: '\('
+      set:
+        - include: ptr-declarators
+        - scope: punctuation
+          match: '\)'
+          set: after-declarator
+    - match: '(?=\S)'
+      pop: true
+
+  noptr-declarators:
+    - scope: entity.name.function
+      match: '{{identifier}}(?=\s*\()'
+      push: [after-declarator, parameter-paren]
+    - scope: meta.identifier
+      match: '{{identifier}}'
+      push: after-declarator
+    - match: '\('
+      push:
+        - include: ptr-declarators
+        - match: '\)'
+          set: after-declarator
+
+  after-noptr-declarator:
+    - include: declar-separator
+    - include: statement-terminator
+    - scope: keyword.operator
+      match: '='
+      set: 
+        - include: declar-separator
+        - include: statement-terminator
+    - match: '(?=\S)'
+      pop: true
+
+  declar-separator:
+    - scope: punctuation.separator
+      match: ','
+      set: [noptr-declarator, ptr-operator]
+
+  parameter-paren:
+    - scope: punctuation
+      match: '\('
+      set:
+        - scope: punctuation
+          match: '\)'
+          pop: true
+        # - match: '(?=\S)'
+        #   pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  parameter-parens:
+    - match: '(?=\()'
+      push: parameter-paren
+
+  after-declarator:
+    - match: '(?=\()'
+      set: [after-declarator, parameter-paren]
+    - scope: punctuation
+      match: '\['
+      set:
+        - scope: punctuation
+          match: '\]'
+          set: after-declarator
+    - match: '(?=\S)'
+      set: after-noptr-declarator
+
+  statement-terminator:
+    - scope: punctuation
+      match: ';'
+      pop: true
+
+
+
+
+
+  statement-group:
+    - scope: punctuation
+      match: '\{'
+      set:
+        - scope: keyword.control
+          match: '\b(?:{{control_keywords}})\b'
+        - include: free-identifiers
+        - include: declars
+        - include: expr-groups
+        - include: statement-groups
+        - scope: punctuation
+          match: '\}'
+          pop: true
+
+  statement-groups:
+    - match: '(?=\{)'
+      push: statement-group
+
+  expr-group:
+    - scope: punctuation
+      match: '\('
+      set:
+        - include: expr-groups
+        - scope: punctuation
+          match: '\)'
+          pop: true
+
+  expr-groups:
+    - match: '(?=\()'
+      push: expr-group
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  comments:
+    - scope: comment.block.c++
+      match: ^/\* =(\s*.*?)\s*= \*/$\n?
+      captures:
+        1: meta.toc-list.banner.block.c++
+    - scope: punctuation.definition.comment.c++
+      match: /\*
+      push:
+        - meta_scope: comment.block.c++
+        - scope: punctuation.definition.comment.c++
+          match: \*/
+          pop: true
+    - scope: invalid.illegal.stray-comment-end.c++
+      match: \*/(?!\*)
+    - scope: comment.line.banner.c++
+      match: ^// =(\s*.*?)\s*=\s*$\n?
+      captures:
+        1: meta.toc-list.banner.line.c++
+    - scope: punctuation.definition.comment.c++
+      match: //
+      push:
+        - meta_scope: comment.line.double-slash.c++
+        - match: '(\\)$\n'
+          captures:
+            1: punctuation.separator.continuation.c++
+        - match: (?=\n)
+          pop: true
