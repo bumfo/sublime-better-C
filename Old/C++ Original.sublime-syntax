@@ -18,7 +18,7 @@ file_extensions:
   - inl
   - ipp
 first_line_match: '-\*- C\+\+ -\*-'
-scope: source.c++
+scope: source.c++original
 variables:
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
   path_lookahead: '(::\s*)?({{identifier}}\s*::\s*)*{{identifier}}'
@@ -422,13 +422,11 @@ contexts:
         - include: expressions
 
   namespace:
-    - match: '\b(using)\s+(namespace)\s+' #(?={{path_lookahead}})
+    - match: '\b(using)\s+(namespace)\s+(?={{path_lookahead}})'
       captures:
         1: keyword.control.c++
         2: keyword.control.c++
       push:
-        - match: '(?=(?:{{basic_types}}))'
-          pop: true
         - include: identifiers
         - match: ''
           pop: true
@@ -702,10 +700,10 @@ contexts:
     # then this is likely a return type of a function. This is uncommon.
     - match: |-
         (?x:
-          (\b(?:{{before_tag}})\b)
+          ({{before_tag}})
           \s+
           (?=
-            (?![[:upper:][:digit:]_]+\b|__declspec|\b(?:{{before_tag}})\b)
+            (?![[:upper:][:digit:]_]+\b|__declspec|{{before_tag}})
             {{path_lookahead}}
             (\s+{{identifier}}\s*\(|\s*[*&])
           )
@@ -874,7 +872,7 @@ contexts:
           pop: true
         - match: (?=^\s*#\s*(elif|else|endif)\b)
           pop: true
-        - match: '(?=(\b(?:{{before_tag}})\b)([^(;]+$|.*\{))'
+        - match: '(?=({{before_tag}})([^(;]+$|.*\{))'
           push: data-structures
         - include: statements
 
@@ -1094,7 +1092,7 @@ contexts:
           pop: true
         - include: expressions
     # Constructor
-    - match: '((?!\b(?:{{before_tag}})\b|template){{identifier}})(?=\s*\()'
+    - match: '((?!{{before_tag}}|template){{identifier}})(?=\s*\()'
       scope: meta.method.constructor.c++ entity.name.function.constructor.c++
       set: method-definition-params
     # Long form constructor
@@ -1124,10 +1122,10 @@ contexts:
     # then this is likely a return type of a function. This is uncommon.
     - match: |-
         (?x:
-          (\b(?:{{before_tag}})\b)
+          ({{before_tag}})
           \s+
           (?=
-            (?![[:upper:][:digit:]_]+\b|__declspec|\b(?:{{before_tag}})\b)
+            (?![[:upper:][:digit:]_]+\b|__declspec|{{before_tag}})
             {{path_lookahead}}
             (\s+{{identifier}}\s*\(|\s*[*&])
           )
@@ -1289,7 +1287,7 @@ contexts:
           pop: true
         - match: (?=^\s*#\s*(elif|else|endif)\b)
           pop: true
-        - match: '(?=(\b(?:{{before_tag}})\b)([^(;]+$|.*\{))'
+        - match: '(?=({{before_tag}})([^(;]+$|.*\{))'
           push: data-structures
         - include: statements
 
@@ -1734,7 +1732,7 @@ contexts:
         - include: strings
         - match: '\S+'
           scope: string.unquoted.c++
-    - match: ^\s*(#\s*(?:include|import))\b\s*
+    - match: ^\s*(#\s*(?:include|import))\b\s+
       captures:
         1: keyword.control.import.include.c++
       push:

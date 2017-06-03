@@ -6,7 +6,7 @@ file_extensions:
   - c
   - h
 first_line_match: "-[*]-( Mode:)? C -[*]-"
-scope: source.c
+scope: source.c_original
 
 variables:
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
@@ -1076,7 +1076,7 @@ contexts:
         - include: strings
         - match: '\S+'
           scope: string.unquoted.c
-    - match: ^\s*(#\s*(?:include|import))\b\s*
+    - match: ^\s*(#\s*(?:include|import))\b\s+
       captures:
         1: keyword.control.import.include.c
       push:

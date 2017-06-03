@@ -1,7 +1,6 @@
 <snippet>
 	<name>Class</name>
-	<content><![CDATA[class ${1:${TM_FILENAME/(.+)\..+|.*/$1/:name}}
-{
+	<content><![CDATA[class ${1:${TM_FILENAME/(.+)\..+|.*/$1/:name}} {
 public:
 	${1/(\w+).*/$1/}($2);
 	~${1/(\w+).*/$1/}();

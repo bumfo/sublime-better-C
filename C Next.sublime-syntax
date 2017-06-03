@@ -205,7 +205,7 @@ contexts:
     - meta_include_prototype: false
 
   preprocessor_expressions:
-    - meta_content_scope: meta.preprocessor.macro.c
+    - meta_scope: meta.preprocessor.macro.c
     - include: statements
 
   std_types:
@@ -538,7 +538,7 @@ contexts:
 
   define_identifier:
     - match: '{{identifier}}(?=\()'
-      scope: entity.name.function.macro.c
+      scope: entity.name.function.preprocessor.c
       pop: true
     - match: '{{identifier}}'
       scope: entity.name.constant.preprocessor.c

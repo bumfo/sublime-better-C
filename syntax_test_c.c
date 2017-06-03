@@ -1,10 +1,8 @@
-/* SYNTAX TEST "Packages/C++/C.sublime-syntax" */
+/* SYNTAX TEST "Packages/Better C++/C Next.sublime-syntax" */
 
 #define EXTTS_BUFSIZE (PTP_BUF_TIMESTAMPS /* comment block */ * sizeof(struct ptp_extts_event)) // comment line
 /*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.preprocessor.macro */
-/*                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ meta.group */
-/*                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^ meta.group meta.group */
-/* <- keyword.control.import.define */
+/*^^^^^ keyword.control.import.define */
 /*      ^ entity.name.constant.preprocessor */
 /*                                        ^ comment.block */
 /*                                                              ^ keyword.operator.word */
@@ -15,15 +13,18 @@
 "baz")
 /*^^^^ meta.preprocessor */
 
+#pragma foo(\
+/*          ^ punctuation.separator.continuation */ \
+)
+/* <- meta.preprocessor */
+
 #define MY_MACRO(a, b)
 /*^^^^^^^^^^^^^^^^^^^^ meta.preprocessor.macro */
-/*              ^^^^^^ meta.preprocessor.macro.parameters */
 /*      ^^^^^^^^ entity.name.function.preprocessor */
 /*                   ^ punctuation.definition.group.end */
 
 #define max(a, b, \
 /*^^^^^^^^^^^^^^^^^ meta.preprocessor.macro */ \
-/*         ^^^^^^^^ meta.preprocessor.macro.parameters */ \
 /* <- keyword.control.import.define */ \
 /*      ^ entity.name.function.preprocessor */ \
 /*         ^ punctuation.definition.group.begin */ \
@@ -40,6 +41,8 @@
 #define PACKED __attribute__((aligned(1),packed))
 /*      ^ entity.name.constant */
 /*             ^ storage.modifier */
+
+#inc
 
 int i;
 /* <- storage.type */
