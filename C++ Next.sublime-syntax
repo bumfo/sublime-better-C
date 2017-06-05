@@ -29,14 +29,15 @@ variables:
   path_lookahead: '(?={{path_lookahead_content}})'
 
   scopable_identifier: '{{path_lookahead_optional_content}}{{identifier}}'
-  top_level_template_content: (?:(?:{{scopable_identifier}}\s*)(?:,\s*(?:{{scopable_identifier}}\s*)?)*)?
+  template_content: '[^<>,]*'
+  top_level_template_content: '(?:(?:{{template_content}}\s*)(?:,\s*(?:{{template_content}}\s*)?)*)?'
   template_lookahead: |-
     (?x)
     (?:
       (?:<\s*{{top_level_template_content}}>)|
       (?:<\s*
-        (?:(?:{{scopable_identifier}}\s*)(?:,\s*{{scopable_identifier}}\s*)*<\s*)*
-        (?:(?:{{scopable_identifier}}\s*)(?:,\s*{{scopable_identifier}}\s*)*<\s*{{top_level_template_content}}>\s*)(?:,\s*(?:{{scopable_identifier}}\s*(?:<\s*{{top_level_template_content}}>\s*)?)?)*
+        (?:(?:{{template_content}}\s*)(?:,\s*{{template_content}}\s*)*<\s*)*
+        (?:(?:{{template_content}}\s*)(?:,\s*{{template_content}}\s*)*<\s*{{top_level_template_content}}>\s*)(?:,\s*(?:{{template_content}}\s*(?:<\s*{{top_level_template_content}}>\s*)?)?)*
       >)
     )
   # basic_types: 'void|char|short|int|long|float|double|signed|unsigned'
@@ -135,6 +136,7 @@ contexts:
         - scope: punctuation
           match: '>'
           pop: true
+        - include: expressions
 
   scopable:
     - scope: punctuation
@@ -737,6 +739,7 @@ contexts:
       push:
         - scope: punctuation
           match: ':'
+          pop: true
         - match: '(?=\S)'
           pop: true
 
