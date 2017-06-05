@@ -702,10 +702,11 @@ contexts:
     # - meta_scope: entity.name.function
     - scope: entity.name.class
       match: ({{identifier}})
-      set: [class-constructor-name, test, test1]
+      set: [class-constructor-name, test, class-open-brace]
     - match: '(?=\S)'
+      pop: true
 
-  test1:
+  class-open-brace:
     - scope: punctuation
       match: '\{'
       pop: true
@@ -715,6 +716,8 @@ contexts:
       match: ';'
       pop: true
     - include: statement-group
+    - match: '(?=\S)'
+      pop: true
 
   class-constructor-name:
     - scope: punctuation
@@ -728,16 +731,26 @@ contexts:
       set: [class-constructor-name, test, after-parameter-paren, parameter-paren]
     - match: '(?=\S)'
 
+  class-modifiers:
+    - scope: storage.modifier.c++
+      match: '\b(?:public|private|protected)\b'
+      push:
+        - scope: punctuation
+          match: ':'
+        - match: '(?=\S)'
+          pop: true
+
   test:
     - include: statement-groups
     - match: '(?=\})'
       pop: true
     - scope: entity.name.function.destructor
-      match: ~(?=\b\1\s*\()
+      match: '~(?=\b\1\s*\()'
       pop: true
     - scope: entity.name.function.constructor
       match: (?=\b\1\s*\()
       pop: true
+    - include: class-modifiers
     - include: declars
 
   class-head:
@@ -756,6 +769,7 @@ contexts:
     - scope: punctuation
       match: '\{'
       set:
+        - include: class-modifiers
         - include: declars
         - scope: punctuation
           match: '\}'
@@ -778,30 +792,30 @@ contexts:
 
   comments:
     - scope: comment.block.c++
-      match: ^/\* =(\s*.*?)\s*= \*/$\n?
+      match: '^/\* =(\s*.*?)\s*= \*/$\n?'
       captures:
         1: meta.toc-list.banner.block.c++
     - scope: punctuation.definition.comment.c++
-      match: /\*
+      match: '/\*'
       push:
         - meta_scope: comment.block.c++
         - scope: punctuation.definition.comment.c++
-          match: \*/
+          match: '\*/'
           pop: true
     - scope: invalid.illegal.stray-comment-end.c++
-      match: \*/(?!\*)
+      match: '\*/(?!\*)'
     - scope: comment.line.banner.c++
-      match: ^// =(\s*.*?)\s*=\s*$\n?
+      match: '^// =(\s*.*?)\s*=\s*$\n?'
       captures:
         1: meta.toc-list.banner.line.c++
     - scope: punctuation.definition.comment.c++
-      match: //
+      match: '//'
       push:
         - meta_scope: comment.line.double-slash.c++
         - match: '(\\)$\n'
           captures:
             1: punctuation.separator.continuation.c++
-        - match: (?=\n)
+        - match: '(?=\n)'
           pop: true
 
 
