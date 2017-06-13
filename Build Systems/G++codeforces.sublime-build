@@ -1,0 +1,6 @@
+{
+  "shell_cmd": "/usr/local/Cellar/gcc/7.1.0/bin/g++-7 \"${file}\" -static -fno-optimize-sibling-calls -fno-strict-aliasing -DONLINE_JUDGE -lm -s -x c++ -Wl,--stack=268435456 -O2 -o \"${file_path}/${file_base_name}\"",
+  "file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
+  "working_dir": "${file_path}",
+  "selector": "source.c++",
+}

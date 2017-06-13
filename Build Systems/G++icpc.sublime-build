@@ -1,0 +1,6 @@
+{
+  "shell_cmd": "/usr/local/Cellar/gcc/7.1.0/bin/g++-7 -static-libgcc -static-libstdc++ -g -O2 -std=gnu++14 \"${file}\" -o \"${file_path}/${file_base_name}\"",
+  "file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
+  "working_dir": "${file_path}",
+  "selector": "source.c++",
+}
