@@ -71,6 +71,7 @@ contexts:
     - include: global
 
   global:
+    - include: scope:source.c#incomplete-inc
     - include: preprocessor-others
     - include: using-statements
     - include: global-declars
@@ -81,6 +82,24 @@ contexts:
   using-statements:
     - scope: keyword
       match: '\b(?:using)\b'
+      push:
+        - scope: keyword.namespace
+          match: '\b(?:namespace)\b'
+          set:
+            - match: '(?={{identifier}}(?!\s*;))'
+              pop: true
+            - scope: meta.namespace.using
+              match: '{{identifier}}'
+              set:
+                - scope: punctuation
+                  match: ';'
+                  pop: true
+                - match: '(?=\S)'
+                  pop: true
+            - match: '(?=\S)'
+              pop: true
+        - match: '(?=\S)'
+          pop: true
 
   for-statements:
     - scope: keyword.control.for
@@ -738,6 +757,12 @@ contexts:
         - scope: punctuation
           match: '\]'
           pop: true
+    - scope: punctuation.operator.scope-resolver
+      match: '::'
+    - scope: punctuation.operator.pointer-member
+      match: '->'
+    - scope: punctuation.operator.member
+      match: '\.(?!\.|\*)'
     - scope: keyword.operator
       match: '{{operators}}'
     - scope: keyword.operator.comma
@@ -758,7 +783,9 @@ contexts:
 
 
   class-head-name:
-    # - meta_scope: entity.name.function
+    - scope: meta.name.class
+      match: ({{identifier}})(?=\s*(?:\;|{{identifier}}))
+      pop: true
     - scope: entity.name.class
       match: ({{identifier}})
       set: [class-constructor-name, test, class-open-brace]
@@ -975,9 +1002,10 @@ contexts:
 
 
   preprocessor-others:
-    - match: ^\s*(#\s*(?:if|ifdef|ifndef|elif|else|line|pragma|undef))\b
+    - match: ^\s*((#)\s*(?:if|ifdef|ifndef|elif|else|line|pragma|undef))\b
       captures:
         1: keyword.control.import.c++
+        2: punctuation.definition.control.import.c++
       push:
         - meta_scope: meta.preprocessor.c++
         - include: scope:source.c#preprocessor-line-continuation
@@ -985,12 +1013,14 @@ contexts:
         - include: scope:source.c#preprocessor-comments
         - match: \bdefined\b
           scope: keyword.control.c++
-    - match: ^\s*(#\s*endif)\b
+    - match: ^\s*((#)\s*endif)\b
       captures:
         1: meta.preprocessor.c++ keyword.control.import.c++
-    - match: ^\s*(#\s*(?:error|warning))\b
+        2: punctuation.definition.control.import.c++
+    - match: ^\s*((#)\s*(?:error|warning))\b
       captures:
         1: keyword.control.import.error.c++
+        2: punctuation.definition.control.import.c++
       push:
         - meta_scope: meta.preprocessor.diagnostic.c++
         - include: scope:source.c#preprocessor-line-continuation
@@ -999,9 +1029,10 @@ contexts:
         - include: strings
         - match: '\S+'
           scope: string.unquoted.c++
-    - match: ^\s*(#\s*(?:include|import))\b\s*
+    - match: ^\s*((#)\s*(?:include|import))\b\s*
       captures:
         1: keyword.control.import.include.c++
+        2: punctuation.definition.control.import.c++
       push:
         - meta_scope: meta.preprocessor.include.c++
         - include: scope:source.c#preprocessor-line-continuation
