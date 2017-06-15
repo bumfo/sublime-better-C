@@ -58,7 +58,7 @@ variables:
 
   basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
 
-  function_operators: '(?:new\s*\[\s*\]|delete\s*\[\s*\]|new\b|delete\b|~|!|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|\(\s*\)|\[\s*\])'
+  function_operators: '(?:new\s*\[\s*\]|delete\s*\[\s*\]|new\b|delete\b|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|~|!|\(\s*\)|\[\s*\])'
   not_overloadable_operators: '\.|\.\*|\:\:|#|##'
   operators: '{{not_overloadable_operators}}|{{function_operators}}'
 
@@ -72,10 +72,35 @@ contexts:
 
   global:
     - include: preprocessor-others
+    - include: using-statements
     - include: global-declars
     - include: statement-groups
     # - scope: punctuation.unmatched
     #   match: '\}'
+
+  using-statements:
+    - scope: keyword
+      match: '\b(?:using)\b'
+
+  for-statements:
+    - scope: keyword.control.for
+      match: '\b(?:for)\b'
+      push: for-paren
+
+  for-paren-content:
+    - scope: punctuation.separator.for
+      match: ';'
+    - include: expressions
+    - scope: punctuation.paren.end
+      match: '\)'
+      pop: true
+
+  for-paren:
+    - scope: punctuation.paren.begin
+      match: '\('
+      set: [for-paren-content, declar]
+    - match: '(?=\S)'
+      pop: true
 
   typeid:
     - scope: storage.type.struct-or-union
@@ -284,6 +309,28 @@ contexts:
     - scope: storage.type.maybe
       match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
       push: [declar-after-typeid, scoped-maybe-type]
+
+  declar:
+    - scope: storage.type.class
+      match: '\b(?:{{class_specifiers}})\b'
+      set: [declar-after-typeid, class-head]
+    - scope: storage.type.struct-or-union
+      match: '\b(?:{{struct_or_union_specifiers}})\b'
+      set: [declar-after-typeid, struct-or-union-head]
+    - scope: storage.modifier.c++
+      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
+      set: [declar-after-typeid, typeid]
+    - scope: storage.type
+      match: '\b(?:{{basic_types}})\b'
+      set: declar-after-typeid
+    - scope: storage.type.maybe
+      match: '(?={{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_])'
+      set: [declar-after-typeid, scoped-maybe-type]
+    - scope: storage.type.maybe
+      match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
+      set: [declar-after-typeid, scoped-maybe-type]
+    - match: '(?=\S)'
+      pop: true
 
   scoped-function-variable:
     - scope: punctuation
@@ -655,6 +702,7 @@ contexts:
 
 
   statements:
+    - include: for-statements
     - scope: keyword.control
       match: '\b(?:{{control_keywords}})\b'
     - include: free-identifiers
@@ -683,6 +731,13 @@ contexts:
     - include: numbers
     - include: expr-groups
     - include: free-identifiers
+    - scope: punctuation
+      match: '\['
+      push:
+        - include: expressions
+        - scope: punctuation
+          match: '\]'
+          pop: true
     - scope: keyword.operator
       match: '{{operators}}'
     - scope: keyword.operator.comma
@@ -756,7 +811,7 @@ contexts:
       match: (?=\b\1\s*\()
       pop: true
     - include: class-modifiers
-    - include: declars
+    - include: global-declars
 
   class-head:
     - include: class-head-name
