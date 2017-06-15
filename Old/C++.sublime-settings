@@ -1,8 +1,0 @@
-{
-    // This file ensures that C++ gets priority for .h files
-    "extensions": ["h"],
-
-    "tab_size": 2,
-    "translate_tabs_to_spaces": true,
-    "use_spaces": true,
-}
