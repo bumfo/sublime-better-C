@@ -266,10 +266,10 @@ contexts:
 
   global-declars:
     - match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*\1\s*\s*\()'
-      push: [after-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
+      push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
     - scope: entity.name.function.destructor
       match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*~\s*\1\s*\()'
-      push: [after-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
+      push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
 
     - scope: storage.type.class
       match: '\b(?:{{class_specifiers}})\b'
@@ -778,16 +778,59 @@ contexts:
     - match: '(?=\S)'
       pop: true
 
+  after-constructor-parameter-paren:
+    - scope: punctuation
+      match: ';'
+      pop: true
+    - scope: punctuation.initializer-list
+      match: ':'
+      set: [after-constructor-initializer-list, constructor-initializer-list]
+    - include: statement-group
+    - match: '(?=\S)'
+      pop: true
+
+  constructor-initializer-list:
+    - scope: meta.initializer-list.field
+      match: '{{identifier}}'
+      set: [after-constructor-initializer-field, initializer-field-paren]
+    - match: '(?=\S)'
+      pop: true
+
+  initializer-field-paren:
+    - scope: punctuation
+      match: '\('
+      set:
+        - scope: punctuation.separator.arguments
+          match: ','
+        - include: expressions
+        - scope: punctuation
+          match: '\)'
+          pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  after-constructor-initializer-field:
+    - scope: punctuation.separator
+      match: ','
+      set: constructor-initializer-list
+    - match: '(?=\S)'
+      pop: true
+
+  after-constructor-initializer-list:
+    - include: statement-group
+    - match: '(?=\S)'
+      pop: true
+
   class-constructor-name:
     - scope: punctuation
       match: '\}'
       pop: true
     - scope: entity.name.function.destructor
       match: (?<=\~)({{identifier}})
-      set: [class-constructor-name, test, after-parameter-paren, parameter-paren]
+      set: [class-constructor-name, test, after-constructor-parameter-paren, parameter-paren]
     - scope: entity.name.function.constructor
       match: ({{identifier}})
-      set: [class-constructor-name, test, after-parameter-paren, parameter-paren]
+      set: [class-constructor-name, test, after-constructor-parameter-paren, parameter-paren]
     - match: '(?=\S)'
 
   class-modifiers:
