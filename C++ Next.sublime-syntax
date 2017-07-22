@@ -30,7 +30,7 @@ variables:
 
   path_lookahead_child_optional: (?:::\s*{{identifier}}\s*)*(?:::)?
 
-  scopable_identifier: '{{path_lookahead_optional_content}}{{identifier}}'
+  scopable_identifier: '(?!\b(?:new|delete|template)\b){{path_lookahead_optional_content}}{{identifier}}'
   template_item: '[^<>,]*'
   top_level_template_content: '(?:(?:{{template_item}}\s*)(?:,\s*(?:{{template_item}}\s*)?)*)?'
   template_lookahead: |-
@@ -371,6 +371,26 @@ contexts:
     - match: '(?=\S)'
       pop: true
 
+  scoped-class-variable:
+    - scope: punctuation
+      match: '::'
+      set: scoped-class-variable-then
+    - match: '(?=\S)'
+      set: scoped-class-variable-then
+
+  scoped-class-variable-then:
+    - scope: variable.type.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scoped-class-variable-then
+    - scope: variable.type
+      match: '{{identifier}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
   free-identifiers:
     - scope: keyword
       match: '\b(?:operator)\b'
@@ -381,13 +401,13 @@ contexts:
       push: [argument-paren, template-angle-paren, scoped-function-variable]
 
   argument-paren:
-    - scope: punctuation
+    - scope: punctuation.argument.begin
       match: '\('
       set: 
         - scope: punctuation.separator
           match: ','
         - include: expressions
-        - scope: punctuation
+        - scope: punctuation.argument.end
           match: '\)'
           pop: true
 
@@ -447,6 +467,12 @@ contexts:
     - match: '(?=\S)'
       pop: true
 
+  global-declarator-qualified-id:
+    - match: '{{identifier}}(?=\s*::)'
+      set: 
+        - scope: punctuation
+          match: '::'
+          set: global-declarator-id
 
   global-declarator-id:
     - scope: keyword
@@ -470,11 +496,13 @@ contexts:
       pop: true
 
   global-noptr-declarator:
+    - meta_scope: meta.global-noptr-declarator
     - include: statement-terminator
     - match: '(?={{path_lookahead_content}}(?:\b(?:operator)\b\s*{{function_operators}})(?:\s*\())'
       set: [global-after-declarator-initializer, parameter-paren, entity-name-function-operator, scoped-entity-name-function]
     - match: '(?={{path_lookahead_content}}(?:{{identifier}})(?:\s*\())'
       set: [global-after-declarator-initializer, parameter-paren, entity-name-function, scoped-entity-name-function]
+    - include: global-declarator-qualified-id
     - include: global-declarator-id
     - scope: punctuation
       match: '\('
@@ -497,11 +525,11 @@ contexts:
     - scope: meta.identifier
       match: '{{identifier}}'
       set: after-declarator
-    - scope: punctuation
+    - scope: punctuation.declar-paren.begin
       match: '\('
       set:
         - include: ptr-declarators
-        - scope: punctuation
+        - scope: punctuation.declar-paren.end
           match: '\)'
           set: after-declarator
     - match: '(?=\S)'
@@ -644,6 +672,8 @@ contexts:
         - include: declar-separator
         - include: statement-terminator
         - include: expressions
+        - match: '(?=\})'
+          pop: true
     - include: after-declarator-initializer
     # - match: '(?=\S)'
     #   pop: true
@@ -749,6 +779,10 @@ contexts:
     - include: strings
     - include: numbers
     - include: expr-groups
+    - scope: constant.language.boolean.c++
+      match: '\b(?:true|false)\b'
+    - scope: constant.language.c++
+      match: '\b(?:nullptr)\b'
     - include: free-identifiers
     - scope: punctuation
       match: '\['
@@ -763,6 +797,13 @@ contexts:
       match: '->'
     - scope: punctuation.operator.member
       match: '\.(?!\.|\*)'
+    - scope: keyword.operator.new
+      match: '\b(?:new)\b'
+      push:
+        - match: '(?={{scopable_identifier}}\s*\()'
+          set: [argument-paren, scoped-class-variable]
+        - match: '(?={{scopable_identifier}}\s*{{template_lookahead}}\s*\()'
+          set: [argument-paren, template-angle-paren, scoped-class-variable]
     - scope: keyword.operator
       match: '{{operators}}'
     - scope: keyword.operator.comma
