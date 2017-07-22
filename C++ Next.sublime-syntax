@@ -410,6 +410,8 @@ contexts:
         - scope: punctuation.argument.end
           match: '\)'
           pop: true
+    - match: '(?=\S)'
+      pop: true
 
   declar-after-typeid:
     - match: ''
@@ -800,10 +802,12 @@ contexts:
     - scope: keyword.operator.new
       match: '\b(?:new)\b'
       push:
-        - match: '(?={{scopable_identifier}}\s*\()'
-          set: [argument-paren, scoped-class-variable]
-        - match: '(?={{scopable_identifier}}\s*{{template_lookahead}}\s*\()'
+        - match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
           set: [argument-paren, template-angle-paren, scoped-class-variable]
+        - match: '(?={{scopable_identifier}})'
+          set: [argument-paren, scoped-class-variable]
+        - match: '(?=\S)'
+          pop: true
     - scope: keyword.operator
       match: '{{operators}}'
     - scope: keyword.operator.comma
