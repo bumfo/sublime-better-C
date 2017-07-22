@@ -58,7 +58,7 @@ variables:
 
   basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
 
-  function_operators: '(?:new\s*\[\s*\]|delete\s*\[\s*\]|new\b|delete\b|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|~|!|\(\s*\)|\[\s*\])'
+  function_operators: '(?:throw|new\s*\[\s*\]|delete\s*\[\s*\]|new\b|delete\b|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|~|!|\(\s*\)|\[\s*\])'
   not_overloadable_operators: '\.|\.\*|\:\:|#|##'
   operators: '{{not_overloadable_operators}}|{{function_operators}}'
 
@@ -674,7 +674,7 @@ contexts:
         - include: declar-separator
         - include: statement-terminator
         - include: expressions
-        - match: '(?=\})'
+        - match: '(?=\}|\)|\])'
           pop: true
     - include: after-declarator-initializer
     # - match: '(?=\S)'
