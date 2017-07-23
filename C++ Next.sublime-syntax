@@ -74,10 +74,43 @@ contexts:
     - include: scope:source.c#incomplete-inc
     - include: preprocessor-others
     - include: using-statements
+    - include: template-declars
     - include: global-declars
     - include: statement-groups
     # - scope: punctuation.unmatched
     #   match: '\}'
+
+  template-declars:
+    - scope: keyword
+      match: '\b(?:template)\b'
+      push: template-definition
+
+  template-definition:
+    - scope: punctuation.definition.template.begin.c++
+      match: '<'
+      set: [template-definition-end, template-definition-storage]
+  
+  template-definition-storage:
+    - scope: storage.type.typename
+      match: '\b(?:typename|class)\b'
+      set: template-definition-entity
+    - match: '(?=\S)'
+      pop: true
+
+  template-definition-entity:
+    - scope: entity.name.type.template.c++
+      match: '{{identifier}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  template-definition-end:
+    - scope: punctuation.separator
+      match: ','
+      set: [template-definition-end, template-definition-storage]
+    - scope: punctuation.definition.template.end.c++
+      match: '>'
+      pop: true
 
   using-statements:
     - scope: keyword
@@ -507,6 +540,8 @@ contexts:
     - include: statement-terminator
     - match: '(?={{path_lookahead_content}}(?:\b(?:operator)\b\s*{{function_operators}})(?:\s*\())'
       set: [global-after-declarator-initializer, parameter-paren, entity-name-function-operator, scoped-entity-name-function]
+    - match: '(?={{scopable_identifier}}\s*{{template_lookahead}}\s*\()'
+      set: [global-after-declarator-initializer, parameter-paren, template-angle-paren, entity-name-function, scoped-entity-name-function]
     - match: '(?={{path_lookahead_content}}(?:{{identifier}})(?:\s*\())'
       set: [global-after-declarator-initializer, parameter-paren, entity-name-function, scoped-entity-name-function]
     - scope: storage.modifier.c++
@@ -937,6 +972,7 @@ contexts:
       match: (?=\b\1\s*\()
       pop: true
     - include: class-modifiers
+    - include: template-declars
     - include: global-declars
 
   class-head:
@@ -956,6 +992,7 @@ contexts:
       match: '\{'
       set:
         - include: class-modifiers
+        - include: template-declars
         - include: global-declars
         - scope: punctuation
           match: '\}'
