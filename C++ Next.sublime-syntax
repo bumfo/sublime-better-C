@@ -400,6 +400,11 @@ contexts:
     - match: '(?={{scopable_identifier}}\s*{{template_lookahead}}\s*\()'
       push: [argument-paren, template-angle-paren, scoped-function-variable]
 
+    - match: '(?={{scopable_identifier}}\s*\{)'
+      push: [brace-initializer, argument-paren, scoped-class-variable]
+    - match: '(?={{scopable_identifier}}\s*{{template_lookahead}}\s*\{)'
+      push: [brace-initializer, argument-paren, template-angle-paren, scoped-class-variable]
+
   argument-paren:
     - scope: punctuation.argument.begin
       match: '\('
@@ -504,6 +509,8 @@ contexts:
       set: [global-after-declarator-initializer, parameter-paren, entity-name-function-operator, scoped-entity-name-function]
     - match: '(?={{path_lookahead_content}}(?:{{identifier}})(?:\s*\())'
       set: [global-after-declarator-initializer, parameter-paren, entity-name-function, scoped-entity-name-function]
+    - scope: storage.modifier.c++
+      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
     - include: global-declarator-qualified-id
     - include: global-declarator-id
     - scope: punctuation
@@ -524,6 +531,8 @@ contexts:
     - scope: entity.name.function
       match: '{{identifier}}(?=\s*\(\))'
       set: [after-declarator-initializer, parameter-paren]
+    - scope: storage.modifier.c++
+      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
     - scope: meta.identifier
       match: '{{identifier}}'
       set: after-declarator
@@ -574,6 +583,8 @@ contexts:
     - scope: variable.parameter.function
       match: '{{identifier}}(?=\s*\()'
       set: [param-after-declarator, parameter-paren]
+    - scope: storage.modifier.c++
+      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
     - scope: variable.parameter
       match: '{{identifier}}'
       set: param-after-declarator
@@ -715,12 +726,12 @@ contexts:
       push: brace-initializer
 
   brace-initializer:
-    - scope: punctuation.braces.initializer
+    - scope: punctuation.definition.initializer.begin.c++
       match: '\{'
       set:
         - include: brace-initializers
         - include: initializer-argument-contents
-        - scope: punctuation.braces.initializer
+        - scope: punctuation.definition.initializer.end.c++
           match: '\}'
           pop: true
 
