@@ -447,6 +447,8 @@ contexts:
     - scope: keyword.operator
       match: '='
       set: initializer-content
+    - match: '(?=\S)'
+      pop: true
 
   global-after-declarator:
     - match: '(?=\()'
