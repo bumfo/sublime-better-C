@@ -369,13 +369,14 @@ contexts:
       set: [parameter-paren, entity-name-function-operator, operator-entity-function-name]
     - scope: entity.name.function
       match: '{{identifier}}(?=\s*\(\))'
-      set: [parameter-paren]
+      set: parameter-paren
+
     - scope: storage.modifier.c++
       match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
       set: declar-noptr-declarator
     - scope: meta.identifier
       match: '{{identifier}}'
-      set: [after-declarator]
+      set: after-declarator
     - scope: punctuation.declar-paren.begin
       match: '\('
       set: [after-declarator, declar-end-paren, ptr-declarator]
@@ -389,6 +390,7 @@ contexts:
       set: [parameter-paren, template-angle-paren, entity-name-function, scoped-entity-name-function]
     - match: '(?={{path_lookahead_content}}(?:{{identifier}})(?:\s*\())'
       set: [parameter-paren, entity-name-function, scoped-entity-name-function]
+
     - scope: storage.modifier.c++
       match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
       set: global-declar-noptr-declarator
@@ -419,12 +421,6 @@ contexts:
       match: '{{identifier}}'
       set: [global-after-declarator]
 
-  global-declar-declarator-end:
-    - include: declar-separator
-    - include: statement-terminator
-    - match: '(?=\S)'
-      pop: true
-
   declar-end-paren:
     - scope: punctuation
       match: '\)'
@@ -451,30 +447,16 @@ contexts:
       pop: true
 
   global-after-declarator:
-    - match: '(?=\()'
-      set: [parameter-paren]
-    - scope: punctuation
-      match: '\['
-      set:
-        - include: expressions
-        - scope: punctuation
-          match: '\]'
-          set: global-after-declarator
-    - match: '(?=\{)'
-      set: [brace-initializer]
-    - match: '(?=\()'
-      set: [parens-initilizer]
-    - scope: keyword.operator
-      match: '='
-      set: [initializer-content]
-    - match: '(?=\S)'
-      pop: true
+    - include: after-declarator
 
   declar-declarator-end:
     - include: declar-separator
     - include: statement-terminator
     - match: '(?=\S)'
       pop: true
+
+  global-declar-declarator-end:
+    - include: declar-declarator-end
 
   initializer-content:
     - include: brace-initializer
