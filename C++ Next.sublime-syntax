@@ -62,6 +62,9 @@ variables:
   not_overloadable_operators: '\.|\.\*|\:\:|#|##'
   operators: '{{not_overloadable_operators}}|{{function_operators}}'
 
+  storage_type_maybe: '{{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_]|{{scopable_identifier}}\s*{{template_lookahead}}'
+  declar_lookahead: '\b(?:{{class_specifiers}})\b|\b(?:{{struct_or_union_specifiers}})\b|{{decl_specifiers_no_type}}|{{cv_qualifiers}}|\b(?:{{basic_types}})\b|{{storage_type_maybe}}'
+
 contexts:
 
   prototype:
@@ -322,65 +325,30 @@ contexts:
     - scope: entity.name.function.destructor
       match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*~\s*\1\s*\()'
       push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
-
-    - scope: storage.type.class
-      match: '\b(?:{{class_specifiers}})\b'
-      push: [global-declar-after-typeid, class-head]
-    - scope: storage.type.struct-or-union
-      match: '\b(?:{{struct_or_union_specifiers}})\b'
-      push: [global-declar-after-typeid, struct-or-union-head]
-    - scope: storage.modifier.c++
-      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
-      push: [global-declar-after-typeid, typeid]
-    - scope: storage.type
-      match: '\b(?:{{basic_types}})\b'
-      push: global-declar-after-typeid
-    - scope: storage.type.maybe
-      match: '(?={{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_])'
-      push: [global-declar-after-typeid, scoped-maybe-type]
-    - scope: storage.type.maybe
-      match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
-      push: [global-declar-after-typeid, scoped-maybe-type]
+    - match: '(?={{declar_lookahead}})'
+      push: [global-declar-after-typeid, declar]
 
   declars:
-    - scope: storage.type.class
-      match: '\b(?:{{class_specifiers}})\b'
-      push: [declar-after-typeid, class-head]
-    - scope: storage.type.struct-or-union
-      match: '\b(?:{{struct_or_union_specifiers}})\b'
-      push: [declar-after-typeid, struct-or-union-head]
-    - scope: storage.modifier.c++
-      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
-      push: [declar-after-typeid, typeid]
-    - scope: storage.type
-      match: '\b(?:{{basic_types}})\b'
-      push: declar-after-typeid
-    - scope: storage.type.maybe
-      match: '(?={{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_])'
-      push: [declar-after-typeid, scoped-maybe-type]
-    - scope: storage.type.maybe
-      match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
-      push: [declar-after-typeid, scoped-maybe-type]
+    - match: '(?={{declar_lookahead}})'
+      push: [declar-after-typeid, declar]
 
   declar:
     - scope: storage.type.class
       match: '\b(?:{{class_specifiers}})\b'
-      set: [declar-after-typeid, class-head]
+      set: class-head
     - scope: storage.type.struct-or-union
       match: '\b(?:{{struct_or_union_specifiers}})\b'
-      set: [declar-after-typeid, struct-or-union-head]
+      set: struct-or-union-head
     - scope: storage.modifier.c++
       match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
-      set: [declar-after-typeid, typeid]
+      set: typeid
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
-      set: declar-after-typeid
+      pop: true
     - scope: storage.type.maybe
-      match: '(?={{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_])'
-      set: [declar-after-typeid, scoped-maybe-type]
-    - scope: storage.type.maybe
-      match: '(?={{scopable_identifier}}\s*{{template_lookahead}})'
-      set: [declar-after-typeid, scoped-maybe-type]
+      match: '(?={{storage_type_maybe}}})'
+      set: scoped-maybe-type
+
     - match: '(?=\S)'
       pop: true
 
