@@ -157,39 +157,33 @@ contexts:
     - match: '(?=\S)'
       pop: true
 
-  typeid:
-    - scope: storage.type.struct-or-union
-      match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
-      set: [after-typeid, struct-or-union-head]
-    - scope: storage.type
-      match: '\b(?:{{basic_types}})\b'
-      set: after-typeid
-    - match: '(?=\S)'
-      set: [after-typeid, scoped-maybe-type]
-
   typenames:
+    - match: '(?=\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b|\b(?:{{basic_types}})\b|::|{{identifier}})'
+      push: typename-typeid
+
+  typename-typeid:
     - scope: storage.type.struct-or-union
       match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
-      push: [after-typeid, struct-or-union-head]
+      set: [typename-after-typeid, struct-or-union-head]
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
-      push: after-typeid
-    - scope: punctuation
+      set: typename-after-typeid
+    - scope: punctuation.scope
       match: '::'
-      push: [after-typeid, scoped-maybe-type-then]
-    - match: '(?={{identifier}})'
-      push: [after-typeid, scoped-maybe-type-then]
+      set: [typename-after-typeid, scoped-maybe-type-then]
+    - match: '(?=\S)'
+      set: [typename-after-typeid, scoped-maybe-type]
 
-  after-typeid:
+  typename-after-typeid:
     - scope: storage.type.struct-or-union
       match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
-      set: [after-typeid, struct-or-union-head]
+      set: [typename-after-typeid, struct-or-union-head]
     - scope: storage.modifier.c++
       match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
-      set: after-typeid
+      set: typename-after-typeid
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
-      push: after-typeid
+      push: typename-after-typeid
     - scope: punctuation
       match: '(?=<)'
       set: [ptr-operator, template-angle-paren]
@@ -345,7 +339,7 @@ contexts:
       set: struct-or-union-head
     - scope: storage.modifier.c++
       match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
-      set: typeid
+      set: typename-typeid
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       pop: true
@@ -425,11 +419,11 @@ contexts:
 
   declar-after-typeid:
     - match: ''
-      set: [noptr-declarator, after-typeid]
+      set: [noptr-declarator, typename-after-typeid]
 
   global-declar-after-typeid:
     - match: ''
-      set: [global-noptr-declarator, after-typeid]
+      set: [global-noptr-declarator, typename-after-typeid]
 
   ptr-declarators:
     - match: '(?=[*&])'
@@ -578,7 +572,7 @@ contexts:
 
   param-after-typeid:
     - match: ''
-      set: [param-noptr-declarator, after-typeid]
+      set: [param-noptr-declarator, typename-after-typeid]
 
   param-ptr-declarators:
     - match: '(?=[*&])'
@@ -649,7 +643,7 @@ contexts:
       push: [param-after-typeid, struct-or-union-head]
     - scope: storage.modifier.c++
       match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
-      push: [param-after-typeid, typeid]
+      push: [param-after-typeid, typename-typeid]
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       push: param-after-typeid
