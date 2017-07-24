@@ -97,6 +97,8 @@ contexts:
     - scope: storage.type.typename
       match: '\b(?:typename|class)\b'
       set: template-definition-entity
+    - match: '(?={{declar_lookahead}})'
+      set: [declar-noptr-declarator, typename-after-typeid, declar-common]
     - match: '(?=\S)'
       pop: true
 
