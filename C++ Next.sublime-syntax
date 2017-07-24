@@ -153,7 +153,7 @@ contexts:
   for-paren:
     - scope: punctuation.paren.begin
       match: '\('
-      set: [for-paren-content, declar]
+      set: [for-paren-content, declar-after-typeid, declar]
     - match: '(?=\S)'
       pop: true
 
@@ -326,13 +326,17 @@ contexts:
       match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*~\s*\1\s*\()'
       push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
     - match: '(?={{declar_lookahead}})'
-      push: [global-declar-after-typeid, declar]
+      push: [global-declar-after-typeid, declar-common]
 
   declars:
     - match: '(?={{declar_lookahead}})'
-      push: [declar-after-typeid, declar]
+      push: [declar-after-typeid, declar-common]
 
   declar:
+    - match: ''
+      set: [declar-after-typeid, declar-common]
+
+  declar-common:
     - scope: storage.type.class
       match: '\b(?:{{class_specifiers}})\b'
       set: class-head
