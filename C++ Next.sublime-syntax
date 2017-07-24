@@ -153,7 +153,7 @@ contexts:
   for-paren:
     - scope: punctuation.paren.begin
       match: '\('
-      set: [for-paren-content, declar-after-typeid, declar]
+      set: [for-paren-content, declar]
     - match: '(?=\S)'
       pop: true
 
@@ -542,29 +542,20 @@ contexts:
       set: noptr-declarator
     - scope: meta.identifier
       match: '{{identifier}}'
-      set: after-declarator
+      set: [declar-declarator-end, after-declarator]
     - scope: punctuation.declar-paren.begin
       match: '\('
       set:
         - include: ptr-declarators
         - scope: punctuation.declar-paren.end
           match: '\)'
-          set: after-declarator
+          set: [declar-declarator-end, after-declarator]
     - match: '(?=\S)'
       pop: true
 
   noptr-declarators:
-    - scope: entity.name.function
-      match: '{{identifier}}(?=\s*\()'
-      push: [after-declarator-initializer, parameter-paren]
-    - scope: meta.identifier
-      match: '{{identifier}}'
-      push: after-declarator
-    - match: '\('
-      push:
-        - include: ptr-declarators
-        - match: '\)'
-          set: after-declarator
+    - match: '\b(?:operator)\b|{{identifier}}(?=\s*\(\))|{{decl_specifiers_no_type}}|{{cv_qualifiers}}|{{identifier}}|\('
+      push: noptr-declarator
 
   param-declar-separator:
     - scope: punctuation.separator
@@ -669,18 +660,12 @@ contexts:
     - match: '(?=\()'
       push: parameter-paren
 
-  # after-declarator-initializer:
-  #   - include: declar-separator
-  #   - include: statement-terminator
-
   declar-declarator-end:
     - include: declar-separator
     - include: statement-terminator
     - match: '(?=\S)'
       pop: true
 
-  after-declarator-initializer:
-    - include: declar-declarator-end
 
   after-declarator-common:
     - scope: keyword.operator
@@ -692,7 +677,6 @@ contexts:
         - include: expressions
         - match: '(?=\}|\)|\])'
           pop: true
-    - include: declar-declarator-end
     # - match: '(?=\S)'
     #   pop: true
 
@@ -703,7 +687,7 @@ contexts:
 
   after-declarator:
     - match: '(?=\(\))'
-      set: [after-declarator-initializer, parameter-paren]
+      set: parameter-paren
     - scope: punctuation
       match: '\['
       set:
@@ -712,9 +696,9 @@ contexts:
           match: '\]'
           set: after-declarator
     - match: '(?=\{)'
-      set: [after-declarator-initializer, brace-initializer]
+      set: brace-initializer
     - match: '(?=\()'
-      set: [after-declarator-initializer, parens-initilizer]
+      set: parens-initilizer
     - include: after-declarator-common
 
   parens-initilizer:
@@ -761,6 +745,7 @@ contexts:
     - match: '(?=\()'
       set: [global-after-declarator-initializer, parens-initilizer]
     - include: after-declarator-common
+    - include: declar-declarator-end
 
   statement-terminator:
     - scope: punctuation
