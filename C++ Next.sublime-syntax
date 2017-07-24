@@ -421,6 +421,11 @@ contexts:
     - match: ''
       set: [noptr-declarator, typename-after-typeid]
 
+  declar-separator:
+    - scope: punctuation.separator
+      match: ','
+      set: [noptr-declarator, ptr-operator]
+
   global-declar-after-typeid:
     - match: ''
       set: [global-noptr-declarator, typename-after-typeid]
@@ -525,15 +530,16 @@ contexts:
       pop: true
 
   noptr-declarator:
-    - include: statement-terminator
+    # - include: statement-terminator
     - scope: keyword
       match: '\b(?:operator)\b'
-      set: [after-declarator-initializer, parameter-paren, entity-name-function-operator, operator-entity-function-name]
+      set: [declar-declarator-end, parameter-paren, entity-name-function-operator, operator-entity-function-name]
     - scope: entity.name.function
       match: '{{identifier}}(?=\s*\(\))'
-      set: [after-declarator-initializer, parameter-paren]
+      set: [declar-declarator-end, parameter-paren]
     - scope: storage.modifier.c++
       match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
+      set: noptr-declarator
     - scope: meta.identifier
       match: '{{identifier}}'
       set: after-declarator
@@ -559,11 +565,6 @@ contexts:
         - include: ptr-declarators
         - match: '\)'
           set: after-declarator
-
-  declar-separator:
-    - scope: punctuation.separator
-      match: ','
-      set: [noptr-declarator, ptr-operator]
 
   param-declar-separator:
     - scope: punctuation.separator
@@ -672,11 +673,14 @@ contexts:
   #   - include: declar-separator
   #   - include: statement-terminator
 
-  after-declarator-initializer:
+  declar-declarator-end:
     - include: declar-separator
     - include: statement-terminator
     - match: '(?=\S)'
       pop: true
+
+  after-declarator-initializer:
+    - include: declar-declarator-end
 
   after-declarator-common:
     - scope: keyword.operator
@@ -688,7 +692,7 @@ contexts:
         - include: expressions
         - match: '(?=\}|\)|\])'
           pop: true
-    - include: after-declarator-initializer
+    - include: declar-declarator-end
     # - match: '(?=\S)'
     #   pop: true
 
