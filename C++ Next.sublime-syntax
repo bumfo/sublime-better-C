@@ -352,36 +352,62 @@ contexts:
 
   declar-after-typeid:
     - match: ''
-      set: [declar-noptr-declarator, typename-after-typeid]
+      set: [declar-declarator-end, declar-noptr-declarator, typename-after-typeid]
+
+  declar-separator:
+    - scope: punctuation.separator
+      match: ','
+      set: [declar-declarator-end, declar-noptr-declarator, ptr-operator]
 
   declar-noptr-declarator:
     - scope: keyword
       match: '\b(?:operator)\b'
-      set: [declar-declarator-end, parameter-paren, entity-name-function-operator, operator-entity-function-name]
+      set: [parameter-paren, entity-name-function-operator, operator-entity-function-name]
     - scope: entity.name.function
       match: '{{identifier}}(?=\s*\(\))'
-      set: [declar-declarator-end, parameter-paren]
+      set: [parameter-paren]
     - scope: storage.modifier.c++
       match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
       set: declar-noptr-declarator
     - scope: meta.identifier
       match: '{{identifier}}'
-      set: [declar-declarator-end, after-declarator]
+      set: [after-declarator]
     - scope: punctuation.declar-paren.begin
       match: '\('
-      set: [declar-declarator-end, after-declarator, declar-end-paren, ptr-declarator]
+      set: [after-declarator, declar-end-paren, ptr-declarator]
     - match: '(?=\S)'
       pop: true
 
-  declar-separator:
-    - scope: punctuation.separator
-      match: ','
-      set: [declar-noptr-declarator, ptr-operator]
-  
+  after-declarator:
+    - match: '(?=\(\))'
+      set: parameter-paren
+    - scope: punctuation
+      match: '\['
+      set:
+        - include: expressions
+        - scope: punctuation
+          match: '\]'
+          set: after-declarator
+    - match: '(?=\{)'
+      set: brace-initializer
+    - match: '(?=\()'
+      set: parens-initilizer
+    - scope: keyword.operator
+      match: '='
+      set: initializer-content
+
   declar-declarator-end:
     - include: declar-separator
     - include: statement-terminator
     - match: '(?=\S)'
+      pop: true
+
+  initializer-content:
+    - include: brace-initializer
+    - include: declar-separator
+    - include: statement-terminator
+    - include: expressions
+    - match: '(?=\}|\)|\])'
       pop: true
 
   scoped-function-variable:
@@ -658,40 +684,10 @@ contexts:
     - match: '(?=\()'
       push: parameter-paren
 
-
-  after-declarator-common:
-    - scope: keyword.operator
-      match: '='
-      set: 
-        - include: brace-initializer
-        - include: declar-separator
-        - include: statement-terminator
-        - include: expressions
-        - match: '(?=\}|\)|\])'
-          pop: true
-    # - match: '(?=\S)'
-    #   pop: true
-
   initializer-argument-contents:
     - scope: punctuation.separator
       match: ','
     - include: expressions
-
-  after-declarator:
-    - match: '(?=\(\))'
-      set: parameter-paren
-    - scope: punctuation
-      match: '\['
-      set:
-        - include: expressions
-        - scope: punctuation
-          match: '\]'
-          set: after-declarator
-    - match: '(?=\{)'
-      set: brace-initializer
-    - match: '(?=\()'
-      set: parens-initilizer
-    - include: after-declarator-common
 
   parens-initilizer:
     - scope: punctuation.parens.initializer
@@ -736,7 +732,9 @@ contexts:
       set: [global-after-declarator-initializer, brace-initializer]
     - match: '(?=\()'
       set: [global-after-declarator-initializer, parens-initilizer]
-    - include: after-declarator-common
+    - scope: keyword.operator
+      match: '='
+      set: initializer-content
     - include: declar-declarator-end
 
   statement-terminator:
