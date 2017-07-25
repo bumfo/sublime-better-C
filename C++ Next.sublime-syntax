@@ -98,7 +98,7 @@ contexts:
       match: '\b(?:typename|class)\b'
       set: template-definition-entity
     - match: '(?={{declar_lookahead}})'
-      set: [declar-noptr-declarator, typename-after-typeid, declar-common]
+      set: [declar-noptr-declarator, typename-after-typeid, declar-context]
     - match: '(?=\S)'
       pop: true
 
@@ -162,6 +162,12 @@ contexts:
   typenames:
     - match: '(?=\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b|\b(?:{{basic_types}})\b|::|{{identifier}})'
       push: typename-typeid
+
+  declar-after-modifier:
+    - match: '(?=\b(?:operator)\b)'
+      set: [parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
+    - match: '(?=\S)'
+      set: typename-typeid
 
   typename-typeid:
     - scope: storage.type.struct-or-union
@@ -317,20 +323,33 @@ contexts:
 
   declars:
     - match: '(?={{declar_lookahead}})'
-      push: [declar-declarator-end, declar-after-typeid, declar-common]
+      push: [declar-declarator-end, declar-after-typeid, declar-context]
 
   global-declars:
-    - match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*\1\s*\s*\()'
+    - match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*operator\b)'
+      push: [after-constructor-parameter-paren, parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
+
+    - match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*\1\s*\()'
       push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
     - scope: entity.name.function.destructor
       match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*~\s*\1\s*\()'
       push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
-    - match: '(?={{declar_lookahead}})'
-      push: [global-declar-declarator-end, global-declar-after-typeid, declar-common]
+    - match: '(?={{declar_lookahead}}|\b(?:operator)\b)'
+      push: [global-declar-declarator-end, global-declar-after-typeid, global-declar-context]
 
   declar:
     - match: ''
-      set: [declar-declarator-end, declar-after-typeid, declar-common]
+      set: [declar-declarator-end, declar-after-typeid, declar-context]
+
+  declar-context:
+    - include: declar-common
+    - match: '(?=\S)'
+      pop: true
+
+  global-declar-context:
+    - include: declar-common
+    - match: '(?=\S)'
+      pop: true
 
   declar-common:
     - scope: storage.type.class
@@ -341,16 +360,15 @@ contexts:
       set: struct-or-union-head
     - scope: storage.modifier.c++
       match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
-      set: typename-typeid
+      set: declar-after-modifier
+    - match: '(?=\b(?:operator)\b)'
+      set: declar-after-modifier
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       pop: true
     - scope: storage.type.maybe
       match: '(?={{storage_type_maybe}})'
       set: scoped-maybe-type
-
-    - match: '(?=\S)'
-      pop: true
 
   declar-after-typeid:
     - match: ''
@@ -582,6 +600,52 @@ contexts:
       pop: true
     - match: '(?=\S)'
       pop: true
+
+
+  scoped-entity-name-function-type-conversion:
+    - scope: punctuation
+      match: '::'
+      set: scoped-entity-name-function-type-conversion-then
+    - match: '(?=\S)'
+      set: scoped-entity-name-function-type-conversion-then
+
+  scoped-entity-name-function-type-conversion-then:
+    - scope: meta.entity.name.function.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scoped-entity-name-function-type-conversion-then
+    - scope: keyword
+      match: '\b(?:operator)\b'
+      set: operator-type-conversion
+      # set: operator-entity-function-name
+    # - scope: meta.entity.name.function
+    #   match: '{{identifier}}'
+    #   pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  operator-type-conversion:
+    - scope: punctuation
+      match: '::'
+      set: operator-type-conversion-then
+    - match: '(?=\S)'
+      set: operator-type-conversion-then
+
+  operator-type-conversion-then:
+    - scope: meta.entity.name.function.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: operator-type-conversion-then
+    - scope: meta.entity.name.function.operator-type-conversion
+      match: '{{identifier}}'
+      set: operator-type-conversion-then
+    - match: '(?=\S|\s*\()'
+      pop: true
+
 
   entity-name-function-operator:
     - meta_scope: entity.name.function.operator
