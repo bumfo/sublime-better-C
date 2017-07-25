@@ -63,7 +63,7 @@ variables:
   operators: '{{not_overloadable_operators}}|{{function_operators}}'
 
   storage_type_maybe: '{{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_]|{{scopable_identifier}}\s*{{template_lookahead}}'
-  declar_lookahead: '\b(?:{{class_specifiers}})\b|\b(?:{{struct_or_union_specifiers}})\b|{{decl_specifiers_no_type}}|{{cv_qualifiers}}|\b(?:{{basic_types}})\b|{{storage_type_maybe}}'
+  declar_lookahead: '\b(?:{{class_specifiers}})\b|\b(?:{{struct_or_union_specifiers}})\b|\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b|\b(?:{{basic_types}})\b|{{storage_type_maybe}}|\b(?:operator)\b'
 
 contexts:
 
@@ -166,6 +166,9 @@ contexts:
   declar-after-modifier:
     - match: '(?=\b(?:operator)\b)'
       set: [parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
+    - match: '(?={{path_lookahead_optional_content}}(?:{{identifier}})\s*\()'
+      set: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
+
     - match: '(?=\S)'
       set: typename-typeid
 
@@ -187,7 +190,7 @@ contexts:
       match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
       set: [typename-after-typeid, struct-or-union-head]
     - scope: storage.modifier.c++
-      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: typename-after-typeid
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
@@ -326,7 +329,7 @@ contexts:
       push: [declar-declarator-end, declar-after-typeid, declar-context]
 
   global-declars:
-    - match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*operator\b)'
+    - match: '(?={{path_lookahead_optional_content}}(?:{{identifier}})\s*::\s*operator\b)'
       push: [after-constructor-parameter-paren, parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
 
     - match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*\1\s*\()'
@@ -334,7 +337,7 @@ contexts:
     - scope: entity.name.function.destructor
       match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*~\s*\1\s*\()'
       push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
-    - match: '(?={{declar_lookahead}}|\b(?:operator)\b)'
+    - match: '(?={{declar_lookahead}})'
       push: [global-declar-declarator-end, global-declar-after-typeid, global-declar-context]
 
   declar:
@@ -359,7 +362,7 @@ contexts:
       match: '\b(?:{{struct_or_union_specifiers}})\b'
       set: struct-or-union-head
     - scope: storage.modifier.c++
-      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: declar-after-modifier
     - match: '(?=\b(?:operator)\b)'
       set: declar-after-modifier
@@ -392,7 +395,7 @@ contexts:
       set: parameter-paren
 
     - scope: storage.modifier.c++
-      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: declar-noptr-declarator
     - scope: meta.identifier
       match: '{{identifier}}'
@@ -412,7 +415,7 @@ contexts:
       set: [parameter-paren, entity-name-function, scoped-entity-name-function]
 
     - scope: storage.modifier.c++
-      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: global-declar-noptr-declarator
     - scope: meta.global-declarator.qualified
       match: '{{identifier}}(?=\s*::)'
@@ -677,7 +680,7 @@ contexts:
       match: '{{identifier}}(?=\s*\()'
       set: [param-after-declarator, parameter-paren]
     - scope: storage.modifier.c++
-      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
     - scope: variable.parameter
       match: '{{identifier}}'
       set: param-after-declarator
@@ -734,7 +737,7 @@ contexts:
       match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
       push: [param-after-typeid, struct-or-union-head]
     - scope: storage.modifier.c++
-      match: '{{decl_specifiers_no_type}}|{{cv_qualifiers}}'
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       push: [param-after-typeid, typename-typeid]
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
