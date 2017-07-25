@@ -58,7 +58,7 @@ variables:
 
   basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
 
-  function_operators: '(?:throw|new\s*\[\s*\]|delete\s*\[\s*\]|new\b|delete\b|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|~|!|\(\s*\)|\[\s*\])'
+  function_operators: '(?:\bthrow|\bnew\s*\[\s*\]|\bdelete\s*\[\s*\]|\bnew\b|\bdelete\b|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|~|!|\(\s*\)|\[\s*\])'
   not_overloadable_operators: '\.|\.\*|\:\:|#|##'
   operators: '{{not_overloadable_operators}}|{{function_operators}}'
 
@@ -166,8 +166,12 @@ contexts:
   declar-after-modifier:
     - match: '(?=\b(?:operator)\b)'
       set: [parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
-    - match: '(?={{path_lookahead_optional_content}}(?:{{identifier}})\s*\()'
+    - match: '(?={{path_lookahead_content}}(?:{{identifier}})\s*\()'
       set: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
+    - match: '(?={{path_lookahead_content}}(?:~{{identifier}})\s*\()'
+      set: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-destructor]
+    # - match: '(?={{identifier}}\s*\()'
+    #   pop: true
 
     - match: '(?=\S)'
       set: typename-typeid
