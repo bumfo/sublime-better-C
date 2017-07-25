@@ -98,7 +98,7 @@ contexts:
       match: '\b(?:typename|class)\b'
       set: template-definition-entity
     - match: '(?={{declar_lookahead}})'
-      set: [declar-noptr-declarator, typename-after-typeid, declar-context]
+      set: [declar-noptr-declarator, typename-after-typeid, declar-common-context]
     - match: '(?=\S)'
       pop: true
 
@@ -162,19 +162,6 @@ contexts:
   typenames:
     - match: '(?=\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b|\b(?:{{basic_types}})\b|::|{{identifier}})'
       push: typename-typeid
-
-  declar-after-modifier:
-    - match: '(?=\b(?:operator)\b)'
-      set: [parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
-    - match: '(?={{path_lookahead_content}}(?:{{identifier}})\s*\()'
-      set: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
-    - match: '(?={{path_lookahead_content}}(?:~{{identifier}})\s*\()'
-      set: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-destructor]
-    # - match: '(?={{identifier}}\s*\()'
-    #   pop: true
-
-    - match: '(?=\S)'
-      set: typename-typeid
 
   typename-typeid:
     - scope: storage.type.struct-or-union
@@ -330,7 +317,7 @@ contexts:
 
   declars:
     - match: '(?={{declar_lookahead}})'
-      push: [declar-declarator-end, declar-after-typeid, declar-context]
+      push: declar
 
   global-declars:
     - match: '(?={{path_lookahead_optional_content}}(?:{{identifier}})\s*::\s*operator\b)'
@@ -342,21 +329,45 @@ contexts:
       match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*~\s*\1\s*\()'
       push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
     - match: '(?={{declar_lookahead}})'
-      push: [global-declar-declarator-end, global-declar-after-typeid, global-declar-context]
+      push: global-declar
 
   declar:
-    - match: ''
-      set: [declar-declarator-end, declar-after-typeid, declar-context]
-
-  declar-context:
-    - include: declar-common
+    - scope: storage.modifier.c++
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
+      set: declar-after-modifier
+    - match: '(?=\b(?:operator)\b)'
+      set: declar-after-modifier
     - match: '(?=\S)'
+      set: [declar-declarator-end, declar-after-typeid, declar-common-context]
+
+  global-declar:
+    - scope: storage.modifier.c++
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
+      set: global-declar-after-modifier
+    - match: '(?=\b(?:operator)\b)'
+      set: global-declar-after-modifier
+    - match: '(?=\S)'
+      set: [global-declar-declarator-end, global-declar-after-typeid, declar-common-context]
+
+  declar-after-modifier-common:
+    - match: '(?=\b(?:operator)\b)'
+      set: [parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
+    - match: '(?={{path_lookahead_content}}(?:{{identifier}})\s*\()'
+      set: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
+    - match: '(?={{path_lookahead_content}}(?:~{{identifier}})\s*\()'
+      set: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-destructor]
+    - match: '(?={{identifier}}\s*\()'
       pop: true
 
-  global-declar-context:
-    - include: declar-common
+  declar-after-modifier:
+    - include: declar-after-modifier-common
     - match: '(?=\S)'
-      pop: true
+      set: [declar-declarator-end, declar-after-typeid, typename-typeid]
+
+  global-declar-after-modifier:
+    - include: declar-after-modifier-common
+    - match: '(?=\S)'
+      set: [global-declar-declarator-end, global-declar-after-typeid, typename-typeid]
 
   declar-common:
     - scope: storage.type.class
@@ -365,17 +376,17 @@ contexts:
     - scope: storage.type.struct-or-union
       match: '\b(?:{{struct_or_union_specifiers}})\b'
       set: struct-or-union-head
-    - scope: storage.modifier.c++
-      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
-      set: declar-after-modifier
-    - match: '(?=\b(?:operator)\b)'
-      set: declar-after-modifier
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       pop: true
     - scope: storage.type.maybe
       match: '(?={{storage_type_maybe}})'
       set: scoped-maybe-type
+
+  declar-common-context:
+    - include: declar-common
+    - match: '(?=\S)'
+      pop: true
 
   declar-after-typeid:
     - match: ''
