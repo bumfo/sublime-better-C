@@ -360,11 +360,17 @@ contexts:
       pop: true
 
   declar-after-modifier:
+    - scope: storage.modifier.c++
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
+      set: declar-after-modifier
     - include: declar-after-modifier-common
     - match: '(?=\S)'
       set: [declar-declarator-end, declar-after-typeid, typename-typeid]
 
   global-declar-after-modifier:
+    - scope: storage.modifier.c++
+      match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
+      set: global-declar-after-modifier
     - include: declar-after-modifier-common
     - match: '(?=\S)'
       set: [global-declar-declarator-end, global-declar-after-typeid, typename-typeid]
