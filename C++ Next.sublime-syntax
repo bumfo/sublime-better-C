@@ -30,7 +30,7 @@ variables:
 
   path_lookahead_child_optional: (?:::\s*{{identifier}}\s*)*(?:::)?
 
-  scopable_identifier: '(?!\b(?:new|delete|template)\b){{path_lookahead_optional_content}}{{identifier}}'
+  scopable_identifier: '(?!\b(?:new|delete|throw|template)\b){{path_lookahead_optional_content}}{{identifier}}'
   template_item: '[^<>,]*'
   top_level_template_content: '(?:(?:{{template_item}}\s*)(?:,\s*(?:{{template_item}}\s*)?)*)?'
   template_lookahead: |-
@@ -43,7 +43,7 @@ variables:
       >)
     )
   # basic_types: 'void|char|short|int|long|float|double|signed|unsigned'
-  control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
+  control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while|try|catch'
 
   storage_class_specifiers: 'register|static|thread_local|extern|mutable'
   function_specifiers: 'inline|virtual|explicit'

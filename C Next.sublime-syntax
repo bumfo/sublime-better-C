@@ -15,7 +15,7 @@ variables:
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
   identifier_lookahead: '(?=\b[[:alpha:]_])'
   basic_types: 'void|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
-  int_types: 'u?int((_(least|fast))?(8|16|32|64)|max|ptr)_t|__int128|__u?int128_t|size_t|ptrdiff_t|wchar_t'
+  int_types: 'u?int((_(least|fast))?(8|16|32|64)|max|ptr)_t|__int128|__u?int128_t|s?size_t|ptrdiff_t|wchar_t'
   atomic_types: 'atomic_(?:bool|char(?:16_t|32_t)?|u?int(?:_(?:(?:(?:fast|least)(?:8|16|32|64))|max|ptr)_t)?|llong|long|ptrdiff_t|schar|short|size_t|uchar|ullong|ulong|ushort|wchar_t)'
   known_types: '{{basic_types}}|{{int_types}}|{{atomic_types}}'
   control_keywords: 'break|case|continue|default|do|else|for|goto|if|return|switch|while'
