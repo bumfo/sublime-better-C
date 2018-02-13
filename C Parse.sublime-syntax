@@ -74,7 +74,7 @@ contexts:
 
   test_declar:
     - match: '(?={{type_modifier}}|{{type_basic}}|{{struct_like}})'
-      set: [test_declar_after_specifier_context, test_specifier_context]
+      push: [test_declar_after_specifier_context, test_specifier_context]
 
   test_declar_after_specifier_context:
     - match: ''
@@ -88,9 +88,26 @@ contexts:
   test_declar_declarator_context:
     - match: '(?=\*)'
       set: [test_declar_declarator_context, pointer_definition_context]
+    - match: '(?!{{invalid_identifier}})(?={{identifier}})|(?=\()'
+      set: [test_declar_declarator_comma_context, test_declar_after_declarator_context, test_declar_declarator_content_context]
+    - include: fallpop
+
+  test_declar_declarator_content_context:
     - scope: meta.test_declar_declarator_context
-      match: '(?!{{invalid_identifier}})(?={{identifier}})'
-      set: [test_declar_declarator_comma_context, test_declar_after_declarator_context, test_declar_declarator_identifier_context]
+      match: '(?={{identifier}})'
+      set: test_declar_declarator_identifier_context
+    - match: '(?=\()'
+      set: test_declar_declarator_group_context
+
+  test_declar_declarator_group_context:
+    - scope: punctuation.section.group.begin
+      match: '\('
+      set: [test_declar_declarator_group_end_context, test_declar_declarator_context]
+        
+  test_declar_declarator_group_end_context:
+    - scope: punctuation.section.group.end
+      match: '\)'
+      pop: true
     - include: fallpop
 
   test_declar_declarator_identifier_context:
@@ -107,7 +124,8 @@ contexts:
     - include: fallpop
 
   pointer_definition_context:
-    - match: '\*'
+    - scope: storage.modifier.pointer
+      match: '\*'
       pop: true
 
   test_declar_after_declarator_context:
@@ -211,18 +229,22 @@ contexts:
 
   test_struct_like_after_tag:
     - match: '(?=\{)'
-      set: [test_struct_like_block_end, test_struct_like_block_content, test_struct_like_block_start]
+      set: [test_struct_like_block_end, test_struct_like_block_content, test_struct_like_block_begin]
     - include: fallpop
 
-  test_struct_like_block_start:
-    - match: '\{'
+  test_struct_like_block_begin:
+    - scope: punctuation.definition.struct-like.begin
+      match: '\{'
       pop: true
 
   test_struct_like_block_end:
-    - match: '\}'
+    - scope: punctuation.definition.struct-like.end
+      match: '\}'
       pop: true
 
   test_struct_like_block_content:
+    - include: test_declar
+    - include: punctuation_terminators
     - include: fallpop
 
 # util
@@ -251,8 +273,7 @@ contexts:
     - scope: punctuation.accessor
       match: '\.|\->'
     - include: punctuation_commas
-    - scope: punctuation.terminator
-      match: ';'
+    - include: punctuation_terminators
     - scope: keyword.operator
       match: '[\+\-\*\/\%\^\&\|\~\=\<\>\!]'
 
@@ -280,6 +301,10 @@ contexts:
   punctuation_commas:
     - scope: punctuation.delimiter
       match: ','
+
+  punctuation_terminators:
+    - scope: punctuation.terminator
+      match: ';'
 
   strings:
     - include: scope:source.c11#strings
