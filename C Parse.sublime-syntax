@@ -11,6 +11,7 @@ scope: source.c1x
 variables:
   _basic_types: 'void|signed|unsigned|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
   _aggregate_types: 'struct|union|enum'
+  _simple_types: '{{_basic_types}}|{{_aggregate_types}}'
 
   _storage_classes: 'static|extern|auto|register|_Thread_local'
   _type_qualifiers: 'const|restrict|volatile|_Atomic'
@@ -20,6 +21,8 @@ variables:
   _control_keywords: 'return|if|else|switch|case|default|goto|for|do|while|break|continue'
 
   _word_operators: 'sizeof'
+
+  invalid_identifier: '\b(?:{{_simple_types}}|{{_type_modifiers}}|{{_control_keywords}}|{{_word_operators}})\b'
 
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
 
@@ -38,41 +41,68 @@ contexts:
   global:
     - include: preprocessors
     - include: test_declar
-    # - include: fallback
+    - include: fallback
+
+
+
+# test declar
 
   test_declar:
-    - match: '(?={{type_modifier}})'
-      push: [test_declar_scope_context_modifier_start, type_basic_and_aggregate_context, type_modifier_context]
-    - match: '(?={{type_basic}}|{{struct_like}})'
-      push: [test_declar_scope_context_type_start, type_basic_and_aggregate_context]
+    - match: '(?={{type_modifier}}|{{type_basic}}|{{struct_like}})'
+      set: [test_declar_after_specifier_context, test_specifier_context]
 
-  # test_declar_scope_context:
-  #   - meta_scope: invalid.illegal.identifier.test_declar
-  #   - include: fallpop
-
-  test_declar_scope_context_modifier_start:
-    - meta_scope: invalid.illegal.identifier.test_declar_modifier
+  test_declar_after_specifier_context:
+    - match: '(?={{identifier}})(?!{{invalid_identifier}})'
+      set: [test_declar_scope_context, test_declar_identifier_context]
     - include: fallpop
 
-  test_declar_scope_context_type_start:
-    - meta_scope: invalid.illegal.identifier.test_declar_type
+  test_declar_scope_context:
+    - meta_scope: invalid.illegal.test2.test_declar_scope_context
+    - include: fallpop
+
+  test_declar_identifier_context:
+    - scope: meta.test_declar_identifier_context
+      match: '{{identifier}}'
+      set: test_declar_identifier_comma_context
+    - include: fallpop
+
+  test_declar_identifier_comma_context:
+    - match: '(?=,)'
+      set: [test_declar_identifier_context, punctuation_comma_context]
+    - include: fallpop
+
+  punctuation_comma_context:
+    - include: punctuation_commas
+    - include: fallpop
+
+
+# test specifier
+
+  test_specifier_context:
+    - include: test_specifier_fragment
+    - include: fallpop    
+
+  test_specifier_fragment:
+    - match: '(?={{type_modifier}})'
+      set: [test_specifier_scope_context_modifier_start, type_basic_and_aggregate_context, type_modifier_context]
+    - match: '(?={{type_basic}}|{{struct_like}})'
+      set: [test_specifier_scope_context_type_start, type_basic_and_aggregate_context]
+
+  test_specifier_scope_context_modifier_start:
+    - meta_scope: meta.test_specifier_modifier
+    - include: fallpop
+
+  test_specifier_scope_context_type_start:
+    - meta_scope: meta.test_specifier_type
     - include: fallpop
 
   type_modifier_context:
-    # - meta_scope: invalid.illegal.identifier.type_modifier_context
     - include: type_modifiers
     - include: fallpop
 
-  # type_basic_and_aggregate:
-  #   - match: '(?={{type_basic}})'
-  #     push: 
-  #       - meta_scope: invalid.illegal.identifier
-  #       - include: basic_types
-  #       - include: fallpop
-  #   - include: test_struct_like
+# basic and aggregate
 
   type_basic_and_aggregate_context:
-    # - meta_scope: invalid.illegal.identifier.type_basic_and_aggregate_context
     - include: type_basic_fragment
     - include: test_struct_like_fragment
     - include: fallpop
@@ -86,7 +116,6 @@ contexts:
       set: [modifiers_after_type_basic_context, type_basic_fragment_content]
 
   type_basic_fragment_content:
-    # - meta_scope: invalid.illegal.identifier.type_basic_fragment
     - include: basic_types
     - include: fallpop
 
@@ -95,12 +124,9 @@ contexts:
       set: [type_basic_context, type_modifier_context]
     - include: fallpop
 
-  # test_struct_like:
-  #   - match: '(?={{struct_like}})'
-  #     push: test_struct_like_keyword
+# test struct like
 
   test_struct_like_fragment:
-    # - meta_scope: invalid.illegal.identifier.test_struct_like_fragment
     - match: '(?={{struct_like}})'
       set: [type_modifier_context, test_struct_like_keyword]
 
@@ -135,6 +161,8 @@ contexts:
   test_struct_like_block_content:
     - include: fallpop
 
+# util
+
   fallback:
     - include: basic_types
     - include: aggregate_types
@@ -158,8 +186,7 @@ contexts:
       match: '[\(\)\[\]\{\}]'
     - scope: punctuation.accessor
       match: '\.|\->'
-    - scope: punctuation.delimiter
-      match: ','
+    - include: punctuation_commas
     - scope: punctuation.terminator
       match: ';'
     - scope: keyword.operator
@@ -181,6 +208,10 @@ contexts:
     - scope: storage.modifier.directive.c
       match: '\b(?:{{_compiler_directives}})\b'
 
+  punctuation_commas:
+    - scope: punctuation.delimiter
+      match: ','
+
   strings:
     - include: scope:source.c11#strings
 
@@ -201,3 +232,4 @@ contexts:
   fallpop:
     - match: '(?=\S)'
       pop: true
+
