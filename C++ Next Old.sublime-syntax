@@ -1,7 +1,7 @@
 %YAML 1.2
 ---
 # http://www.sublimetext.com/docs/3/syntax.html
-name: C++ Next
+name: C++ Next Old
 file_extensions:
   - cc
   - cpp
@@ -55,8 +55,6 @@ variables:
   enum_specifiers: 'enum'
   cv_qualifiers: 'const|volatile'
   struct_or_union_specifiers: 'struct|union'
-
-  visibility_modifiers: 'public|protected|private'
 
   basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
 
@@ -901,7 +899,7 @@ contexts:
       pop: true
     - scope: entity.name.class
       match: ({{identifier}})
-      set: [class-constructor-name, test, class-open-brace, class-inheritance-spec]
+      set: [class-constructor-name, test, class-open-brace]
     - match: '(?=\S)'
       pop: true
 
@@ -975,7 +973,7 @@ contexts:
 
   class-modifiers:
     - scope: storage.modifier.c++
-      match: '\b(?:{{visibility_modifiers}})\b'
+      match: '\b(?:public|private|protected)\b'
       push:
         - scope: punctuation
           match: ':'
@@ -1005,48 +1003,17 @@ contexts:
   struct-or-union-head:
     - scope: entity.name.struct-or-union
       match: '({{identifier}})'
-      set: [class-or-struct-or-union-body, class-inheritance-spec]
+      set: class-or-struct-or-union-body
     - match: '(?=\S)'
-      set: [class-or-struct-or-union-body, class-inheritance-spec]
-
-  class-inheritance-list:
-    - scope: storage.modifier
-      match: '\b(?:{{visibility_modifiers}})\b'
-    - scope: entity.other.inherited-class
-      match: '({{identifier}})'
-      set: 
-        - scope: punctuation
-          match: '\,'
-          set: class-inheritance-list
-        - match: '(?=\S)'
-          pop: true
-    - match: '(?=\S)'
-      pop: true
-
-  class-inheritance-spec:
-    - scope: punctuation
-      match: '\:'
-      set: class-inheritance-list
-    - match: '(?=\S)'
-      pop: true
+      set: class-or-struct-or-union-body
 
   class-or-struct-or-union-body:
     - scope: punctuation
       match: '\{'
       set:
-        - match: '({{identifier}})(?=\s*\()'
-          push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor]
         - include: class-modifiers
         - include: template-declars
         - include: global-declars
-
-        - scope: punctuation
-          match: '\{'
-          push:
-            - scope: punctuation
-              match: '\}'
-              pop: true
-
         - scope: punctuation
           match: '\}'
           pop: true

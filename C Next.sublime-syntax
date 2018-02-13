@@ -51,7 +51,7 @@ contexts:
     - include: strong_declaration
     - include: statement_group
     - include: expressions
-    - scope: punctuation
+    - scope: punctuation.terminator
       match: ';'
     - scope: punctuation.unmatched
       match: '\}'
@@ -104,10 +104,10 @@ contexts:
     - include: expressions
 
   statement_group:
-    - scope: punctuation.begin
+    - scope: punctuation.section.block.begin
       match: '\{'
       push:
-        - scope: punctuation.end
+        - scope: punctuation.section.block.end
           match: '\}'
           pop: true
         - include: statement_group
@@ -134,10 +134,26 @@ contexts:
         - include: easy_pop
 
   punctuations:
+    - scope: punctuation.delimiter.comma
+      match: '[,]'
+    - scope: punctuation.terminator
+      match: '[;]'
+    - scope: punctuation.accessor
+      match: '[\.]'
     - scope: punctuation
-      match: '[\(\)\[\]\{\},;.]'
+      match: '[,;.]'
     - scope: punctuation
       match: '->|<:|:>|<%|%>'
+    - scope: punctuation.section.arguments.begin
+      match: '\('
+      push:
+        - scope: punctuation.section.arguments.end
+          match: '\)'
+          pop: true
+        - include: expressions
+        - scope: meta.identifier
+          match: '{{identifier}}'
+        - include: easy_pop
 
   strings:
     - include: scope:source.c#strings
@@ -237,22 +253,22 @@ contexts:
       match: '\b(?:{{modifiers}})\b'
 
   expression_group:
-    - scope: punctuation
+    - scope: punctuation.section.group.begin
       match: '\('
       push: expression_group_context
     - include: easy_pop
 
   parameter_group:
-    - scope: punctuation
+    - scope: punctuation.section.parameters.begin
       match: '\((?=.+\)\s*;)'
       set: param_context
-    - scope: punctuation
+    - scope: punctuation.section.parameters.begin
       match: '\('
       set: universal_param_context
     - include: easy_pop
 
   simple_parameter_group:
-    - scope: punctuation
+    - scope: punctuation.section.parameters.begin
       match: '\('
       set: simple_param_context
     - include: easy_pop
@@ -287,7 +303,7 @@ contexts:
           match: '\}'
           pop: true
         - include: strong_declaration
-        - scope: punctuation
+        - scope: punctuation.terminator
           match: ';'
     - include: easy_pop
 
@@ -430,19 +446,19 @@ contexts:
       set: expression_group_context
 
   after_declarator:
-    - scope: punctuation
+    - scope: punctuation.section
       match: '\['
       set: [after_declarator, bracket_context]
-    - scope: punctuation
+    - scope: punctuation.section.parameters.begin
       match: '\('
       set: [after_declarator, simple_param_context]
     - include: easy_pop
 
   after_function_declarator:
-    - scope: punctuation
+    - scope: punctuation.section.parameters.begin
       match: '\((?=[\s[:alnum:]_,\*\/]+(\)[\s\*\/]*([[:alnum:]_]|\{|$)|$))'
       set: [after_declarator, universal_param_context]
-    - scope: punctuation
+    - scope: punctuation.section.parameters.begin
       match: '\(' # match: '\((?=.*[^\s[:alnum:]_,].*\)[^\{]*(\{|$))'
       set: [after_declarator, param_context]
     - include: easy_pop
@@ -466,13 +482,13 @@ contexts:
     - include: expressions
 
   declarator_comma:
-    - scope: punctuation
+    - scope: punctuation.delimiter.comma
       match: ','
       set: [declarator_comma, after_declarator, declarator_context]
     - include: easy_pop
 
   typedef_declarator_comma:
-    - scope: punctuation
+    - scope: punctuation.delimiter.comma
       match: ','
       set: [typedef_declarator_comma, after_declarator, typedef_declarator_context]
     - include: easy_pop
@@ -481,9 +497,9 @@ contexts:
     - meta_scope: meta.param
     - scope: keyword.punctuation
       match: '\.\.\.'
-    - scope: punctuation
+    - scope: punctuation.separator
       match: ','
-    - scope: punctuation
+    - scope: punctuation.section.parameters.end
       match: '\)'
       pop: true
     - match: '{{identifier_lookahead}}'
@@ -491,9 +507,9 @@ contexts:
 
   universal_param_context:
     - meta_scope: meta.param.universal
-    - scope: punctuation
+    - scope: punctuation.delimiter.comma
       match: ','
-    - scope: punctuation
+    - scope: punctuation.section.parameters.end
       match: '\)'
       pop: true
     - match: '(?=\b({{type_context_lookahead}})\b)'
@@ -505,7 +521,7 @@ contexts:
 
   simple_param_context:
     - meta_scope: meta.param
-    - scope: punctuation
+    - scope: punctuation.delimiter.comma
       match: ','
     - scope: punctuation
       match: '\)'
@@ -531,7 +547,7 @@ contexts:
       set: macro_param_content
 
   macro_param_content:
-    - scope: punctuation
+    - scope: punctuation.delimiter.comma
       match: ','
     - scope: variable.parameter
       match: '{{identifier}}'
