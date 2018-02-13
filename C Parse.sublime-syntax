@@ -113,31 +113,22 @@ contexts:
   parameter_declarator_context:
     - match: '(?=\*)'
       set: [parameter_declarator_context, pointer_definition_context]
-    - match: '(?!{{invalid_identifier}})(?={{identifier}})|(?=\()'
-      set: [parameter_after_declarator_context, parameter_declarator_content_context]
-    - include: fallpop
-
-  parameter_declarator_content_context:
     - scope: meta.parameter_declarator_context
-      match: '(?={{identifier}})'
-      set: parameter_identifier_context
+      match: '(?!{{invalid_identifier}})(?={{identifier}})'
+      set: [parameter_after_declarator_context, parameter_identifier_context]
     - match: '(?=\()'
-      set: [test_declar_declarator_group_end_context, parameter_declarator_context, test_declar_declarator_group_context_begin]
+      set: [parameter_after_declarator_context, test_declar_declarator_group_end_context, parameter_declarator_context, test_declar_declarator_group_context_begin]
+    - include: fallpop
 
   parameter2_declarator_context:
     - match: '(?=\*)'
       set: [parameter2_declarator_context, pointer_definition_context]
-    - match: '(?!{{invalid_identifier}})(?={{identifier}})|(?=\()'
-      set: [parameter_after_declarator_context, parameter2_declarator_content_context]
-    - include: fallpop
-
-  parameter2_declarator_content_context:
     - scope: meta.parameter2_declarator_context
-      match: '(?={{identifier}})'
-      set: parameter2_identifier_context
+      match: '(?!{{invalid_identifier}})(?={{identifier}})'
+      set: [parameter_after_declarator_context, parameter2_identifier_context]
     - match: '(?=\()'
-      set: [test_declar_declarator_group_end_context, parameter2_declarator_context, test_declar_declarator_group_context_begin]
-
+      set: [parameter_after_declarator_context, test_declar_declarator_group_end_context, parameter2_declarator_context, test_declar_declarator_group_context_begin]
+    - include: fallpop
 
   test_declar_declarator_group_context_begin:
     - scope: punctuation.section.group.begin
