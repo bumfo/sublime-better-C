@@ -23,6 +23,7 @@ variables:
 
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
 
+  type_modifier: '\b(?:{{_type_modifiers}})\b'
   type_basic: '\b(?:{{_basic_types}})\b'
   struct_like: '\b(?:struct|union)\b'
 
@@ -36,27 +37,72 @@ contexts:
 
   global:
     - include: preprocessors
-    - include: test_struct_like
-    - include: fallback
+    - include: test_declar
+    # - include: fallback
 
+  test_declar:
+    - match: '(?={{type_modifier}})'
+      push: [test_declar_scope_context_modifier_start, type_basic_and_aggregate_context, type_modifier_context]
+    - match: '(?={{type_basic}}|{{struct_like}})'
+      push: [test_declar_scope_context_type_start, type_basic_and_aggregate_context]
+
+  # test_declar_scope_context:
+  #   - meta_scope: invalid.illegal.identifier.test_declar
+  #   - include: fallpop
+
+  test_declar_scope_context_modifier_start:
+    - meta_scope: invalid.illegal.identifier.test_declar_modifier
+    - include: fallpop
+
+  test_declar_scope_context_type_start:
+    - meta_scope: invalid.illegal.identifier.test_declar_type
+    - include: fallpop
+
+  type_modifier_context:
+    # - meta_scope: invalid.illegal.identifier.type_modifier_context
+    - include: type_modifiers
+    - include: fallpop
+
+  # type_basic_and_aggregate:
+  #   - match: '(?={{type_basic}})'
+  #     push: 
+  #       - meta_scope: invalid.illegal.identifier
+  #       - include: basic_types
+  #       - include: fallpop
+  #   - include: test_struct_like
 
   type_basic_and_aggregate_context:
-    - include: type_basic_context
-    - include: test_struct_like_context
+    # - meta_scope: invalid.illegal.identifier.type_basic_and_aggregate_context
+    - include: type_basic_fragment
+    - include: test_struct_like_fragment
+    - include: fallpop
 
   type_basic_context:
+    - include: type_basic_fragment
+    - include: fallpop
+
+  type_basic_fragment:
     - match: '(?={{type_basic}})'
-      set: 
-        - include: basic_types
-        - include: fallpop
+      set: [modifiers_after_type_basic_context, type_basic_fragment_content]
 
-  test_struct_like:
-    - match: '(?={{struct_like}})'
-      push: test_struct_like_keyword
+  type_basic_fragment_content:
+    # - meta_scope: invalid.illegal.identifier.type_basic_fragment
+    - include: basic_types
+    - include: fallpop
 
-  test_struct_like_context:
+  modifiers_after_type_basic_context:
+    - match: '(?=\b(?:{{_type_qualifiers}}|{{_compiler_directives}}|{{_type_modifiers}})\b)'
+      set: [type_basic_context, type_modifier_context]
+    - include: fallpop
+
+  # test_struct_like:
+  #   - match: '(?={{struct_like}})'
+  #     push: test_struct_like_keyword
+
+  test_struct_like_fragment:
+    # - meta_scope: invalid.illegal.identifier.test_struct_like_fragment
     - match: '(?={{struct_like}})'
-      set: test_struct_like_keyword
+      set: [type_modifier_context, test_struct_like_keyword]
 
   test_struct_like_keyword:
     - scope: storage.type.struct
