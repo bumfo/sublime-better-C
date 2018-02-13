@@ -78,7 +78,7 @@ contexts:
 
   test_declar_after_specifier_context:
     - match: ''
-      set: [test_declar_scope_context, test_declar_declarator_context]
+      set: [test_declar_scope_context, test_declar_declarator_comma_context, test_declar_declarator_context]
 
   test_declar_scope_context:
     - meta_scope: invalid.illegal.test2.test_declar_scope_context
@@ -89,7 +89,7 @@ contexts:
     - match: '(?=\*)'
       set: [test_declar_declarator_context, pointer_definition_context]
     - match: '(?!{{invalid_identifier}})(?={{identifier}})|(?=\()'
-      set: [test_declar_declarator_comma_context, test_declar_after_declarator_context, test_declar_declarator_content_context]
+      set: [test_declar_after_declarator_context, test_declar_declarator_content_context]
     - include: fallpop
 
   test_declar_declarator_content_context:
@@ -120,7 +120,7 @@ contexts:
 
   test_declar_declarator_comma_context:
     - match: '(?=,)'
-      set: [test_declar_declarator_context, punctuation_comma_context]
+      set: [test_declar_declarator_comma_context, test_declar_declarator_context, punctuation_comma_context]
     - include: fallpop
 
   pointer_definition_context:
