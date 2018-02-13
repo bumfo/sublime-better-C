@@ -30,6 +30,8 @@ variables:
   type_basic: '\b(?:{{_basic_types}})\b'
   struct_like: '\b(?:struct|union)\b'
 
+  test_declar: '{{type_modifier}}|{{type_basic}}|{{struct_like}}'
+
 contexts:
   prototype:
     - include: comments
@@ -73,18 +75,19 @@ contexts:
 # test declar
 
   test_declar:
-    - match: '(?={{type_modifier}}|{{type_basic}}|{{struct_like}})'
+    - match: '(?={{test_declar}})'
       push: [test_declar_after_specifier_context, test_specifier_context]
 
   parameter_declar_context:
-    - match: '(?={{type_modifier}}|{{type_basic}}|{{struct_like}})'
+    - match: '(?={{test_declar}})'
       set: [parameter_declarator_context, test_specifier_context]
     - include: fallpop
 
   parameter2_declar_context:
-    - match: '(?={{type_modifier}}|{{type_basic}}|{{struct_like}})'
+    - match: '(?={{test_declar}})'
       set: [parameter2_declarator_context, test_specifier_context]
     - include: fallpop
+
 
   test_declar_after_specifier_context:
     - match: ''
@@ -100,11 +103,11 @@ contexts:
     - include: fallpop
 
 
+
   test_declar_declarator_context:
     - match: '(?=\*)'
       set: [test_declar_declarator_context, pointer_definition_context]
-    - scope: meta.test_declar_declarator_context
-      match: '(?!{{invalid_identifier}})(?={{identifier}})'
+    - match: '(?!{{invalid_identifier}})(?={{identifier}})'
       set: [test_declar_after_declarator_context, test_declar_declarator_identifier_context]
     - match: '(?=\()'
       set: [parameter_after_declarator_context, test_declar_declarator_group_end_context, test_declar_declarator_context, test_declar_declarator_group_context_begin]
@@ -113,8 +116,7 @@ contexts:
   parameter_declarator_context:
     - match: '(?=\*)'
       set: [parameter_declarator_context, pointer_definition_context]
-    - scope: meta.parameter_declarator_context
-      match: '(?!{{invalid_identifier}})(?={{identifier}})'
+    - match: '(?!{{invalid_identifier}})(?={{identifier}})'
       set: [parameter_after_declarator_context, parameter_identifier_context]
     - match: '(?=\()'
       set: [parameter_after_declarator_context, test_declar_declarator_group_end_context, parameter_declarator_context, test_declar_declarator_group_context_begin]
@@ -123,23 +125,31 @@ contexts:
   parameter2_declarator_context:
     - match: '(?=\*)'
       set: [parameter2_declarator_context, pointer_definition_context]
-    - scope: meta.parameter2_declarator_context
-      match: '(?!{{invalid_identifier}})(?={{identifier}})'
+    - match: '(?!{{invalid_identifier}})(?={{identifier}})'
       set: [parameter_after_declarator_context, parameter2_identifier_context]
     - match: '(?=\()'
       set: [parameter_after_declarator_context, test_declar_declarator_group_end_context, parameter2_declarator_context, test_declar_declarator_group_context_begin]
     - include: fallpop
 
-  test_declar_declarator_group_context_begin:
-    - scope: punctuation.section.group.begin
-      match: '\('
-      pop: true
-        
-  test_declar_declarator_group_end_context:
-    - scope: punctuation.section.group.end
-      match: '\)'
-      pop: true
-    # - include: fallpop
+
+
+  test_declar_after_declarator_context:
+    - include: assign_initializer_fragment
+    - match: '(?=\[)'
+      set: [test_declar_after_declarator_context, subscript_context]
+    - match: '(?=\()'
+      set: [parameter_after_declarator_context, parameter_group_context_end, parameter_list, parameter_group_context_begin]
+    - include: fallpop
+
+  parameter_after_declarator_context:
+    - include: assign_initializer_fragment
+    - match: '(?=\[)'
+      set: [parameter_after_declarator_context, subscript_context]
+    - match: '(?=\()'
+      set: [parameter_after_declarator_context, parameter_group_context_end, parameter2_list, parameter_group_context_begin]
+    - include: fallpop
+
+
 
   test_declar_declarator_identifier_context:
     - scope: entity.name.function
@@ -148,7 +158,6 @@ contexts:
     - scope: meta.identifier.declarator
       match: '{{identifier}}'
       pop: true
-
 
   parameter_identifier_context:
     - scope: variable.parameter
@@ -161,26 +170,26 @@ contexts:
       pop: true
 
 
+
+
+  test_declar_declarator_group_context_begin:
+    - scope: punctuation.section.group.begin
+      match: '\('
+      pop: true
+        
+  test_declar_declarator_group_end_context:
+    - scope: punctuation.section.group.end
+      match: '\)'
+      pop: true
+    # - include: fallpop
+
+
+
+
   pointer_definition_context:
     - scope: storage.modifier.pointer
       match: '\*'
       pop: true
-
-  test_declar_after_declarator_context:
-    - include: assign_initializer_fragment
-    - match: '(?=\[)'
-      set: [test_declar_after_declarator_context, subscript_context]
-    - match: '(?=\()'
-      set: [parameter_after_declarator_context, parameter_group_context]
-    - include: fallpop
-
-  parameter_after_declarator_context:
-    - include: assign_initializer_fragment
-    - match: '(?=\[)'
-      set: [parameter_after_declarator_context, subscript_context]
-    - match: '(?=\()'
-      set: [parameter_after_declarator_context, parameter2_group_context]
-    - include: fallpop
 
   assign_initializer_fragment:
     - scope: keyword.operator.assignment.initializer
@@ -205,9 +214,11 @@ contexts:
           pop: true
         - include: expr_fallback
 
-  parameter_group_context:
+
+
+  parameter_group_context_begin:
     - match: '\('
-      set: [parameter_group_context_end, parameter_list]
+      pop: true
 
   parameter_group_context_end:
     - match: '\)'
@@ -222,15 +233,6 @@ contexts:
   parameter_list:
     - match: ''
       set: [parameter_comma_context, parameter_declar_context]
-
-
-  parameter2_group_context:
-    - match: '\('
-      set: [parameter2_group_context_end, parameter2_list]
-
-  parameter2_group_context_end:
-    - match: '\)'
-      pop: true
 
   parameter2_comma_context:
     - scope: punctuation.separator.parameter2
