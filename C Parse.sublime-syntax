@@ -76,12 +76,22 @@ contexts:
     - match: '(?={{type_modifier}}|{{type_basic}}|{{struct_like}})'
       push: [test_declar_after_specifier_context, test_specifier_context]
 
+  parameter_declar_context:
+    - match: '(?={{type_modifier}}|{{type_basic}}|{{struct_like}})'
+      set: [parameter_declarator_context, test_specifier_context]
+    - include: fallpop
+
   test_declar_after_specifier_context:
     - match: ''
       set: [test_declar_scope_context, test_declar_declarator_comma_context, test_declar_declarator_context]
 
   test_declar_scope_context:
     - meta_scope: invalid.illegal.test2.test_declar_scope_context
+    - include: fallpop
+
+  test_declar_declarator_comma_context:
+    - match: '(?=,)'
+      set: [test_declar_declarator_comma_context, test_declar_declarator_context, punctuation_comma_context]
     - include: fallpop
 
 
@@ -97,18 +107,33 @@ contexts:
       match: '(?={{identifier}})'
       set: test_declar_declarator_identifier_context
     - match: '(?=\()'
-      set: test_declar_declarator_group_context
+      set: [test_declar_declarator_group_end_context, test_declar_declarator_context, test_declar_declarator_group_context_begin]
 
-  test_declar_declarator_group_context:
+  parameter_declarator_context:
+    - match: '(?=\*)'
+      set: [parameter_declarator_context, pointer_definition_context]
+    - match: '(?!{{invalid_identifier}})(?={{identifier}})|(?=\()'
+      set: [test_declar_after_declarator_context, parameter_declarator_content_context]
+    - include: fallpop
+
+  parameter_declarator_content_context:
+    - scope: meta.parameter_declarator_context
+      match: '(?={{identifier}})'
+      set: parameter_identifier_context
+    - match: '(?=\()'
+      set: [test_declar_declarator_group_end_context, parameter_declarator_context, test_declar_declarator_group_context_begin]
+
+
+  test_declar_declarator_group_context_begin:
     - scope: punctuation.section.group.begin
       match: '\('
-      set: [test_declar_declarator_group_end_context, test_declar_declarator_context]
+      pop: true
         
   test_declar_declarator_group_end_context:
     - scope: punctuation.section.group.end
       match: '\)'
       pop: true
-    - include: fallpop
+    # - include: fallpop
 
   test_declar_declarator_identifier_context:
     - scope: entity.name.function
@@ -118,10 +143,10 @@ contexts:
       match: '{{identifier}}'
       pop: true
 
-  test_declar_declarator_comma_context:
-    - match: '(?=,)'
-      set: [test_declar_declarator_comma_context, test_declar_declarator_context, punctuation_comma_context]
-    - include: fallpop
+  parameter_identifier_context:
+    - scope: variable.parameter
+      match: '{{identifier}}'
+      pop: true
 
   pointer_definition_context:
     - scope: storage.modifier.pointer
@@ -132,6 +157,8 @@ contexts:
     - include: assign_initializer_fragment
     - match: '(?=\[)'
       set: [test_declar_after_declarator_context, subscript_context]
+    - match: '(?=\()'
+      set: [test_declar_after_declarator_context, parameter_group_context]
     - include: fallpop
 
   assign_initializer_fragment:
@@ -157,6 +184,24 @@ contexts:
           pop: true
         - include: expr_fallback
 
+  parameter_group_context:
+    - match: '\('
+      set: [parameter_group_context_end, parameter_list]
+        
+
+  parameter_group_context_end:
+    - match: '\)'
+      pop: true
+
+  parameter_comma_context:
+    - scope: punctuation.separator.parameter
+      match: ','
+      set: parameter_list
+    - include: fallpop
+
+  parameter_list:
+    - match: ''
+      set: [parameter_comma_context, parameter_declar_context]
 
 # test specifier
 
