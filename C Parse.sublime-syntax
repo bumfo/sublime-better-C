@@ -9,20 +9,21 @@ first_line_match: '-[*]-( Mode:)? C -[*]-'
 scope: source.c1x
 
 variables:
-  basic_types: 'void|signed|unsigned|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
-  aggregate_types: 'struct|union|enum'
+  _basic_types: 'void|signed|unsigned|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
+  _aggregate_types: 'struct|union|enum'
 
-  storage_classes: 'static|extern|auto|register|_Thread_local'
-  type_qualifiers: 'const|restrict|volatile|_Atomic'
-  compiler_directives: 'inline|__restrict__|__restrict|_Noreturn'
-  type_modifiers: '{{storage_classes}}|{{type_qualifiers}}|{{compiler_directives}}'
+  _storage_classes: 'static|extern|auto|register|_Thread_local'
+  _type_qualifiers: 'const|restrict|volatile|_Atomic'
+  _compiler_directives: 'inline|__restrict__|__restrict|_Noreturn'
+  _type_modifiers: '{{_storage_classes}}|{{_type_qualifiers}}|{{_compiler_directives}}'
 
-  control_keywords: 'return|if|else|switch|case|default|goto|for|do|while|break|continue'
+  _control_keywords: 'return|if|else|switch|case|default|goto|for|do|while|break|continue'
 
-  word_operators: 'sizeof'
+  _word_operators: 'sizeof'
 
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
 
+  type_basic: '\b(?:{{_basic_types}})\b'
   struct_like: '\b(?:struct|union)\b'
 
 contexts:
@@ -39,17 +40,32 @@ contexts:
     - include: fallback
 
 
+  type_basic_and_aggregate_context:
+    - include: type_basic_context
+    - include: test_struct_like_context
+
+  type_basic_context:
+    - match: '(?={{type_basic}})'
+      set: 
+        - include: basic_types
+        - include: fallpop
+
   test_struct_like:
     - match: '(?={{struct_like}})'
-      push:
-        - scope: storage.type.struct
-          match: '\b(?:struct)\b'
-          set: test_struct_like_after_keyword
-        - scope: storage.type.union
-          match: '\b(?:union)\b'
-          set: test_struct_like_after_keyword
-        - match: '(?=\S)'
-          pop: true
+      push: test_struct_like_keyword
+
+  test_struct_like_context:
+    - match: '(?={{struct_like}})'
+      set: test_struct_like_keyword
+
+  test_struct_like_keyword:
+    - scope: storage.type.struct
+      match: '\b(?:struct)\b'
+      set: test_struct_like_after_keyword
+    - scope: storage.type.union
+      match: '\b(?:union)\b'
+      set: test_struct_like_after_keyword
+    - include: fallpop
 
   test_struct_like_after_keyword:
     - scope: invalid.illegal.identifier
@@ -59,9 +75,8 @@ contexts:
 
   test_struct_like_after_tag:
     - match: '(?=\{)'
-      set: [test_struct_like_block_end, test_struct_like_block, test_struct_like_block_start]
-    - match: '(?=\S)'
-      pop: true
+      set: [test_struct_like_block_end, test_struct_like_block_content, test_struct_like_block_start]
+    - include: fallpop
 
   test_struct_like_block_start:
     - match: '\{'
@@ -71,9 +86,8 @@ contexts:
     - match: '\}'
       pop: true
 
-  test_struct_like_block:
-    - match: '(?=\S)'
-      pop: true
+  test_struct_like_block_content:
+    - include: fallpop
 
   fallback:
     - include: basic_types
@@ -85,10 +99,10 @@ contexts:
     - include: type_modifiers
 
     - scope: keyword.control
-      match: '\b(?:{{control_keywords}})\b'
+      match: '\b(?:{{_control_keywords}})\b'
 
     - scope: keyword.operator.word
-      match: '\b(?:{{word_operators}})\b'
+      match: '\b(?:{{_word_operators}})\b'
 
     - include: strings
     - include: numbers
@@ -107,19 +121,19 @@ contexts:
 
   basic_types:
     - scope: storage.type.c
-      match: '\b(?:{{basic_types}})\b'
+      match: '{{type_basic}}'
 
   aggregate_types:
     - scope: storage.type.aggregate.c
-      match: '\b(?:{{aggregate_types}})\b'
+      match: '\b(?:{{_aggregate_types}})\b'
 
   type_modifiers:
     - scope: storage.modifier.storage.c
-      match: '\b(?:{{storage_classes}})\b'
+      match: '\b(?:{{_storage_classes}})\b'
     - scope: storage.modifier.qualifier.c
-      match: '\b(?:{{type_qualifiers}})\b'
+      match: '\b(?:{{_type_qualifiers}})\b'
     - scope: storage.modifier.directive.c
-      match: '\b(?:{{compiler_directives}})\b'
+      match: '\b(?:{{_compiler_directives}})\b'
 
   strings:
     - include: scope:source.c11#strings
@@ -135,3 +149,9 @@ contexts:
 
   comments:
     - include: scope:source.c11#comments
+
+
+
+  fallpop:
+    - match: '(?=\S)'
+      pop: true
