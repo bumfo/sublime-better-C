@@ -321,12 +321,12 @@ contexts:
     - include: fallpop
 
   test_struct_like_block_begin:
-    - scope: punctuation.definition.struct-like.begin
+    - scope: punctuation.section.struct-like.begin
       match: '\{'
       pop: true
 
   test_struct_like_block_end:
-    - scope: punctuation.definition.struct-like.end
+    - scope: punctuation.section.struct-like.end
       match: '\}'
       pop: true
 
