@@ -41,7 +41,7 @@ contexts:
   global:
     - include: preprocessors
     - include: test_declar
-    # - include: fallback
+    - include: fallback
 
 
 
@@ -89,29 +89,37 @@ contexts:
     - match: '(?=\*)'
       set: [test_declar_declarator_context, pointer_definition_context]
     - scope: meta.test_declar_declarator_context
-      match: '(?!{{invalid_identifier}}){{identifier}}'
-      set: [test_declar_identifier_comma_context, test_declar_after_identifier_context]
+      match: '(?!{{invalid_identifier}})(?={{identifier}})'
+      set: [test_declar_declarator_comma_context, test_declar_after_declarator_context, test_declar_declarator_identifier_context]
+    - include: fallpop
+
+  test_declar_declarator_identifier_context:
+    - scope: entity.name.function
+      match: '{{identifier}}(?=\s*\()'
+      pop: true
+    - scope: meta.identifier.declarator
+      match: '{{identifier}}'
+      pop: true
+
+  test_declar_declarator_comma_context:
+    - match: '(?=,)'
+      set: [test_declar_declarator_context, punctuation_comma_context]
     - include: fallpop
 
   pointer_definition_context:
     - match: '\*'
       pop: true
 
-  test_declar_after_identifier_context:
+  test_declar_after_declarator_context:
     - include: assign_initializer_fragment
     - match: '(?=\[)'
-      set: [test_declar_after_identifier_context, subscript_context]
+      set: [test_declar_after_declarator_context, subscript_context]
     - include: fallpop
 
   assign_initializer_fragment:
     - scope: keyword.operator.assignment.initializer
       match: '\='
       set: test_initializer_expr_context
-
-  test_declar_identifier_comma_context:
-    - match: '(?=,)'
-      set: [test_declar_declarator_context, punctuation_comma_context]
-    - include: fallpop
 
   punctuation_comma_context:
     - include: punctuation_commas
