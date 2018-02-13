@@ -217,12 +217,12 @@ contexts:
 
 
   parameter_group_context_begin:
-    - scope: punctuation.section.parameter.begin
+    - scope: punctuation.section.parameters.begin
       match: '\('
       pop: true
 
   parameter_group_context_end:
-    - scope: punctuation.section.parameter.end
+    - scope: punctuation.section.parameters.end
       match: '\)'
       pop: true
 
