@@ -1,0 +1,86 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: C Parse
+file_extensions:
+  - c
+  - h
+first_line_match: '-[*]-( Mode:)? C -[*]-'
+scope: source.c1x
+
+variables:
+  basic_types: 'void|signed|unsigned|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
+  aggregate_types: 'struct|union|enum'
+
+  storage_classes: 'static|extern|auto|register|_Thread_local'
+  type_qualifiers: 'const|restrict|volatile|_Atomic'
+  compiler_directives: 'inline|__restrict__|__restrict|_Noreturn'
+
+  control_keywords: 'return|if|else|switch|case|default|goto|for|do|while|break|continue'
+
+  word_operators: 'sizeof'
+
+contexts:
+  prototype:
+    - include: comments
+
+  main:
+    - include: global
+
+
+  global:
+    - include: preprocessors
+    - include: fallback
+
+  fallback:
+    - scope: storage.type.c
+      match: '\b(?:{{basic_types}})\b'
+
+    - scope: storage.type.aggregate.c
+      match: '\b(?:{{aggregate_types}})\b'
+
+    - scope: keyword
+      match: '\b(?:typedef)\b'
+
+    - scope: storage.modifier.storage.c
+      match: '{{storage_classes}}'
+    - scope: storage.modifier.qualifier.c
+      match: '{{type_qualifiers}}'
+    - scope: storage.modifier.directive.c
+      match: '{{compiler_directives}}'
+
+    - scope: keyword.control
+      match: '\b(?:{{control_keywords}})\b'
+
+    - scope: keyword.operator.word
+      match: '\b(?:{{word_operators}})\b'
+
+    - include: strings
+    - include: numbers
+    - include: constants
+    
+    - scope: punctuation.section
+      match: '[\(\)\[\]\{\}]'
+    - scope: punctuation.accessor
+      match: '\.|\->'
+    - scope: punctuation.delimiter
+      match: ','
+    - scope: punctuation.terminator
+      match: ';'
+    - scope: keyword.operator
+      match: '[\+\-\*\/\%\^\&\|\~\=\<\>\!]'
+
+  strings:
+    - include: scope:source.c11#strings
+
+  numbers:
+    - include: scope:source.c11#numbers
+
+  constants:
+    - include: scope:source.c11#constants
+
+  preprocessors:
+    - include: scope:source.c11#preprocessors
+
+  comments:
+    - include: scope:source.c11#comments
