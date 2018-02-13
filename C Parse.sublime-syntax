@@ -15,10 +15,15 @@ variables:
   storage_classes: 'static|extern|auto|register|_Thread_local'
   type_qualifiers: 'const|restrict|volatile|_Atomic'
   compiler_directives: 'inline|__restrict__|__restrict|_Noreturn'
+  type_modifiers: '{{storage_classes}}|{{type_qualifiers}}|{{compiler_directives}}'
 
   control_keywords: 'return|if|else|switch|case|default|goto|for|do|while|break|continue'
 
   word_operators: 'sizeof'
+
+  identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+
+  struct_like: '\b(?:struct|union)\b'
 
 contexts:
   prototype:
@@ -30,24 +35,54 @@ contexts:
 
   global:
     - include: preprocessors
+    - include: test_struct_like
     - include: fallback
 
+
+  test_struct_like:
+    - match: '(?={{struct_like}})'
+      push:
+        - scope: storage.type.struct
+          match: '\b(?:struct)\b'
+          set: test_struct_like_after_keyword
+        - scope: storage.type.union
+          match: '\b(?:union)\b'
+          set: test_struct_like_after_keyword
+        - match: '(?=\S)'
+          pop: true
+
+  test_struct_like_after_keyword:
+    - scope: invalid.illegal.identifier
+      match: '{{identifier}}'
+      set: test_struct_like_after_tag
+    - include: test_struct_like_after_tag
+
+  test_struct_like_after_tag:
+    - match: '(?=\{)'
+      set: [test_struct_like_block_end, test_struct_like_block, test_struct_like_block_start]
+    - match: '(?=\S)'
+      pop: true
+
+  test_struct_like_block_start:
+    - match: '\{'
+      pop: true
+
+  test_struct_like_block_end:
+    - match: '\}'
+      pop: true
+
+  test_struct_like_block:
+    - match: '(?=\S)'
+      pop: true
+
   fallback:
-    - scope: storage.type.c
-      match: '\b(?:{{basic_types}})\b'
+    - include: basic_types
+    - include: aggregate_types
 
-    - scope: storage.type.aggregate.c
-      match: '\b(?:{{aggregate_types}})\b'
-
-    - scope: keyword
+    - scope: keyword.typedef
       match: '\b(?:typedef)\b'
 
-    - scope: storage.modifier.storage.c
-      match: '{{storage_classes}}'
-    - scope: storage.modifier.qualifier.c
-      match: '{{type_qualifiers}}'
-    - scope: storage.modifier.directive.c
-      match: '{{compiler_directives}}'
+    - include: type_modifiers
 
     - scope: keyword.control
       match: '\b(?:{{control_keywords}})\b'
@@ -69,6 +104,22 @@ contexts:
       match: ';'
     - scope: keyword.operator
       match: '[\+\-\*\/\%\^\&\|\~\=\<\>\!]'
+
+  basic_types:
+    - scope: storage.type.c
+      match: '\b(?:{{basic_types}})\b'
+
+  aggregate_types:
+    - scope: storage.type.aggregate.c
+      match: '\b(?:{{aggregate_types}})\b'
+
+  type_modifiers:
+    - scope: storage.modifier.storage.c
+      match: '\b(?:{{storage_classes}})\b'
+    - scope: storage.modifier.qualifier.c
+      match: '\b(?:{{type_qualifiers}})\b'
+    - scope: storage.modifier.directive.c
+      match: '\b(?:{{compiler_directives}})\b'
 
   strings:
     - include: scope:source.c11#strings
