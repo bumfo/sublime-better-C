@@ -52,9 +52,8 @@ contexts:
       set: [test_declar_after_specifier_context, test_specifier_context]
 
   test_declar_after_specifier_context:
-    - match: '(?={{identifier}})(?!{{invalid_identifier}})'
+    - match: ''
       set: [test_declar_scope_context, test_declar_identifier_context]
-    - include: fallpop
 
   test_declar_scope_context:
     - meta_scope: invalid.illegal.test2.test_declar_scope_context
@@ -62,7 +61,7 @@ contexts:
 
   test_declar_identifier_context:
     - scope: meta.test_declar_identifier_context
-      match: '{{identifier}}'
+      match: '(?!{{invalid_identifier}}){{identifier}}'
       set: test_declar_identifier_comma_context
     - include: fallpop
 
