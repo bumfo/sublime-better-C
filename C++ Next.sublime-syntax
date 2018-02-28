@@ -903,6 +903,10 @@ contexts:
     - scope: constant.language.c++
       match: '\b(?:nullptr)\b'
     - include: free-identifiers
+    
+    - match: '(?=\[\]\s*\{)'
+      push: lambda-expr
+
     - scope: punctuation
       match: '\['
       push:
@@ -931,6 +935,21 @@ contexts:
       match: '{{operators}}'
     - scope: keyword.operator.comma
       match: ','
+
+
+  lambda-expr:
+    - scope: punctuation.definition.lambda.capture.begin
+      match: '\['
+      set:
+        - include: expressions
+        - scope: punctuation.definition.lambda.capture.end
+          match: '\]'
+          set: lambda-expr-body
+
+  lambda-expr-body:
+    - include: statement-groups
+    - match: '(?=\S)'
+      pop: true
 
   expr-group:
     - scope: punctuation
