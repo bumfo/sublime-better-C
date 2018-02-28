@@ -83,10 +83,34 @@ contexts:
     - include: preprocessor-others
     - include: using-statements
     - include: template-declars
+    - include: namespace-declars
     - include: global-declars
     - include: statement-groups
     # - scope: punctuation.unmatched
     #   match: '\}'
+
+  namespace-declars:
+    - scope: storage.type.namespace
+      match: '\b(?:namespace)\b'
+      push:
+        - scope: punctuation
+          match: '\{'
+          set: 
+            - include: using-statements
+            - include: template-declars
+            - include: namespace-declars
+            - include: global-declars
+            - include: statement-groups
+            - scope: punctuation
+              match: '\}'
+              pop: true
+
+  meaningless-braces:
+    - match: '\{'
+      push: 
+        - include: meaningless-braces
+        - match: '\}'
+          pop: true
 
   template-declars:
     - scope: keyword
