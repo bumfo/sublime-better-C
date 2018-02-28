@@ -60,12 +60,15 @@ variables:
 
   basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
 
+  word_operators: '(?:\bthrow|\bnew\s*\[\s*\]|\bdelete\s*\[\s*\]|\bnew\b|\bdelete\b)'
   function_operators: '(?:\bthrow|\bnew\s*\[\s*\]|\bdelete\s*\[\s*\]|\bnew\b|\bdelete\b|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|~|!|\(\s*\)|\[\s*\])'
   not_overloadable_operators: '\.|\.\*|\:\:|#|##'
   operators: '{{not_overloadable_operators}}|{{function_operators}}'
 
   storage_type_maybe: '{{scopable_identifier}}\s*(?:[*&]\s*)*(\((?:[*&]\s*)*)?\b[[:alpha:]_]|{{scopable_identifier}}\s*{{template_lookahead}}'
   declar_lookahead: '\b(?:{{class_specifiers}})\b|\b(?:{{struct_or_union_specifiers}})\b|\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b|\b(?:{{basic_types}})\b|{{storage_type_maybe}}|\b(?:operator)\b'
+
+  aggregate_types: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}}|{{enum_specifiers}})\b'
 
 contexts:
 
@@ -147,6 +150,13 @@ contexts:
       push: for-paren
 
   for-paren-content:
+    - scope: punctuation.separator.foreach
+      match: ':'
+      set: 
+        - include: expressions
+        - scope: punctuation.paren.end
+          match: '\)'
+          pop: true
     - scope: punctuation.separator.for
       match: ';'
     - include: expressions
@@ -162,12 +172,12 @@ contexts:
       pop: true
 
   typenames:
-    - match: '(?=\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b|\b(?:{{basic_types}})\b|::|{{identifier}})'
+    - match: '(?={{aggregate_types}}|\b(?:{{basic_types}})\b|::|{{identifier}})'
       push: typename-typeid
 
   typename-typeid:
     - scope: storage.type.struct-or-union
-      match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
+      match: '{{aggregate_types}}'
       set: [typename-after-typeid, struct-or-union-head]
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
@@ -180,7 +190,7 @@ contexts:
 
   typename-after-typeid:
     - scope: storage.type.struct-or-union
-      match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
+      match: '{{aggregate_types}}'
       set: [typename-after-typeid, struct-or-union-head]
     - scope: storage.modifier.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
@@ -384,6 +394,9 @@ contexts:
     - scope: storage.type.struct-or-union
       match: '\b(?:{{struct_or_union_specifiers}})\b'
       set: struct-or-union-head
+    - scope: storage.type.enum
+      match: '\b(?:{{enum_specifiers}})\b'
+      set: enum-head
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
       pop: true
@@ -757,7 +770,7 @@ contexts:
 
   param-typenames:
     - scope: storage.type.struct-or-union
-      match: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}})\b'
+      match: '{{aggregate_types}}'
       push: [param-after-typeid, struct-or-union-head]
     - scope: storage.modifier.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
@@ -876,6 +889,8 @@ contexts:
           set: [argument-paren, scoped-class-variable]
         - match: '(?=\S)'
           pop: true
+    - scope: keyword.operator.word
+      match: '{{word_operators}}'
     - scope: keyword.operator
       match: '{{operators}}'
     - scope: keyword.operator.comma
@@ -1036,6 +1051,8 @@ contexts:
       set:
         - match: '({{identifier}})(?=\s*\()'
           push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor]
+        - match: '~({{identifier}})(?=\s*\()'
+          push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor]
         - include: class-modifiers
         - include: template-declars
         - include: global-declars
@@ -1054,6 +1071,33 @@ contexts:
       pop: true
 
 
+
+  enum-head:
+    - scope: entity.name.enum
+      match: '({{identifier}})'
+      set: [enum-body, class-inheritance-spec]
+    - match: '(?=\S)'
+      set: [enum-body, class-inheritance-spec]
+
+  enum-body:
+    - scope: punctuation
+      match: '\{'
+      set:
+        - scope: punctuation
+          match: ','
+
+        - scope: punctuation
+          match: '\{'
+          push:
+            - scope: punctuation
+              match: '\}'
+              pop: true
+
+        - scope: punctuation
+          match: '\}'
+          pop: true
+    - match: '(?=\S)'
+      pop: true
 
 
 
