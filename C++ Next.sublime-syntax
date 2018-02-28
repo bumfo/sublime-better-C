@@ -197,10 +197,10 @@ contexts:
       set: typename-after-typeid
     - scope: storage.type
       match: '\b(?:{{basic_types}})\b'
-      push: typename-after-typeid
+      set: typename-after-typeid
     - scope: punctuation
       match: '(?=<)'
-      set: [ptr-operator, template-angle-paren]
+      set: [typename-after-typeid, template-angle-paren]
     - match: '(?=[*&])'
       set: ptr-operator
     - match: '(?=\S)'
