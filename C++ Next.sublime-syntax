@@ -375,7 +375,7 @@ contexts:
     - scope: storage.modifier.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: declar-after-modifier
-    - include: declar-after-modifier-common
+    # - include: declar-after-modifier-common
     - match: '(?=\S)'
       set: [declar-declarator-end, declar-after-typeid, typename-typeid]
 
@@ -383,7 +383,7 @@ contexts:
     - scope: storage.modifier.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: global-declar-after-modifier
-    - include: declar-after-modifier-common
+    # - include: declar-after-modifier-common
     - match: '(?=\S)'
       set: [global-declar-declarator-end, global-declar-after-typeid, typename-typeid]
 
@@ -511,6 +511,16 @@ contexts:
   declar-declarator-end:
     - include: declar-separator
     - include: statement-terminator
+    - include: pure-virtuals
+    - match: '(?=\S)'
+      pop: true
+
+  pure-virtuals:
+    - scope: punctuation.definition.pure
+      match: '\s*(=)\s*(0)\b'
+
+  pure-virtual-specifier:
+    - include: pure-virtuals
     - match: '(?=\S)'
       pop: true
 
@@ -682,6 +692,8 @@ contexts:
     - scope: meta.entity.name.function.operator-type-conversion
       match: '{{identifier}}'
       set: operator-type-conversion-then
+    - match: '(?=<)'
+      set: [operator-type-conversion-then, template-angle-paren]
     - match: '(?=\S|\s*\()'
       pop: true
 
