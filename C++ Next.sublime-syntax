@@ -1083,13 +1083,24 @@ contexts:
     - scope: storage.modifier
       match: '\b(?:{{visibility_modifiers}})\b'
     - scope: entity.other.inherited-class
+      match: '({{identifier}})(?=\s*::)'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: class-inheritance-list
+    - scope: entity.other.inherited-class
       match: '({{identifier}})'
       set: 
-        - scope: punctuation
-          match: '\,'
-          set: class-inheritance-list
-        - match: '(?=\S)'
-          pop: true
+        - match: '(?=<)'
+          set: [class-inheritance-list-then, template-angle-paren]
+        - include: class-inheritance-list-then
+    - match: '(?=\S)'
+      pop: true
+
+  class-inheritance-list-then:
+    - scope: punctuation
+      match: '\,'
+      set: class-inheritance-list
     - match: '(?=\S)'
       pop: true
 
