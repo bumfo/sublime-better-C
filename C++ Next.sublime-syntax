@@ -946,6 +946,8 @@ contexts:
     
     - match: '(?=\[\]\s*\{)'
       push: lambda-expr
+    - match: '(?=\[\]\s*\()'
+      push: lambda-expr
 
     - scope: punctuation
       match: '\['
@@ -984,7 +986,13 @@ contexts:
         - include: expressions
         - scope: punctuation.definition.lambda.capture.end
           match: '\]'
-          set: lambda-expr-body
+          set: [lambda-expr-body, lambda-expr-after-capture]
+
+  lambda-expr-after-capture:
+    - match: '(?=\()'
+      set: parameter-paren
+    - match: '(?=\S)'
+      pop: true
 
   lambda-expr-body:
     - include: statement-groups
