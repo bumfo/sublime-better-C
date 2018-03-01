@@ -944,9 +944,9 @@ contexts:
       match: '\b(?:nullptr)\b'
     - include: free-identifiers
     
-    - match: '(?=\[\]\s*\{)'
+    - match: '(?=\[[\sa-zA-Z0-9&=,]*\]\s*\{)'
       push: lambda-expr
-    - match: '(?=\[\]\s*\()'
+    - match: '(?=\[[\sa-zA-Z0-9&=,]*\]\s*\()'
       push: lambda-expr
 
     - scope: punctuation
