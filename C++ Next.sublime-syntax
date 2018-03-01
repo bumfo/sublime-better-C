@@ -172,14 +172,11 @@ contexts:
               pop: true
             - scope: meta.namespace.using
               match: '{{identifier}}'
-              set:
-                - scope: punctuation
-                  match: ';'
-                  pop: true
-                - match: '(?=\S)'
-                  pop: true
+              set: statement-terminator
             - match: '(?=\S)'
               pop: true
+        - match: '(?={{identifier}}\s*::)'
+          set: [statement-terminator, scoped-using-variable]
         - scope: meta.definition.using
           match: '{{identifier}}'
           set:
@@ -632,6 +629,26 @@ contexts:
           match: '::'
           set: scoped-class-variable-then
     - scope: variable.type
+      match: '{{identifier}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
+  scoped-using-variable:
+    - scope: punctuation
+      match: '::'
+      set: scoped-using-variable-then
+    - match: '(?=\S)'
+      set: scoped-using-variable-then
+
+  scoped-using-variable-then:
+    - scope: meta.variable.using.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scoped-using-variable-then
+    - scope: meta.variable.using
       match: '{{identifier}}'
       pop: true
     - match: '(?=\S)'
