@@ -524,7 +524,7 @@ contexts:
   global-declarator-id:
     - scope: keyword
       match: '\b(?:operator)\b'
-      set: [parameter-paren, entity-name-function-operator, operator-entity-function-name]
+      set: [qualifier-after-function, parameter-paren, entity-name-function-operator, operator-entity-function-name]
     - scope: entity.name.function.c
       match: '{{identifier}}(?=\s*\()'
       set: [qualifier-after-function, parameter-paren]
