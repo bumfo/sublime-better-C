@@ -70,6 +70,8 @@ variables:
 
   aggregate_types: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}}|{{enum_specifiers}})\b'
 
+  non_identifier_words: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}}|{{enum_specifiers}}|{{basic_types}}|{{control_keywords}})\b'
+
 contexts:
 
   prototype:
@@ -412,7 +414,7 @@ contexts:
     - scope: storage.modifier.g.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: declar-after-modifier
-    # - include: declar-after-modifier-common
+    - include: declar-after-modifier-common
     - match: '(?=\S)'
       set: [declar-declarator-end, declar-after-typeid, typename-typeid]
 
@@ -420,7 +422,7 @@ contexts:
     - scope: storage.modifier.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: global-declar-after-modifier
-    # - include: declar-after-modifier-common
+    - include: declar-after-modifier-common
     - match: '(?=\S)'
       set: [global-declar-declarator-end, global-declar-after-typeid, typename-typeid]
 
@@ -1096,9 +1098,12 @@ contexts:
       pop: true
 
   struct-or-union-head:
+    - match: '(?={{non_identifier_words}})'
+      pop: true
     - scope: entity.name.struct-or-union
-      match: '({{identifier}})'
+      match: '{{identifier}}'
       set: [class-or-struct-or-union-body, class-inheritance-spec]
+    
     - match: '(?=\S)'
       set: [class-or-struct-or-union-body, class-inheritance-spec]
 
@@ -1135,7 +1140,7 @@ contexts:
       pop: true
 
   class-or-struct-or-union-body:
-    - scope: punctuation
+    - scope: punctuation.section.struct-like.begin
       match: '\{'
       set:
         - match: '({{identifier}})(?=\s*\()'
@@ -1145,15 +1150,17 @@ contexts:
         - include: class-modifiers
         - include: template-declars
         - include: global-declars
+        - include: statement-groups
 
-        - scope: punctuation
+
+        - scope: punctuation.unmatched.begin
           match: '\{'
           push:
-            - scope: punctuation
+            - scope: punctuation.unmatched.end
               match: '\}'
               pop: true
 
-        - scope: punctuation
+        - scope: punctuation.section.struct-like.end
           match: '\}'
           pop: true
     - match: '(?=\S)'
@@ -1281,7 +1288,7 @@ contexts:
 
 
   preprocessor-others:
-    - match: ^\s*((#)\s*(?:if|ifdef|ifndef|elif|else|line|pragma|undef))\b
+    - match: ^\s*((#)\s*(?:if|ifdef|ifndef|elif|else|line|pragma|undef|define))\b
       captures:
         1: keyword.control.import.c++
         2: punctuation.definition.control.import.c++
