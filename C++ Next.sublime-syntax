@@ -86,10 +86,23 @@ contexts:
     - include: using-statements
     - include: template-declars
     - include: namespace-declars
+    - include: deduction-guides
     - include: global-declars
     - include: statement-groups
     # - scope: punctuation.unmatched
     #   match: '\}'
+
+  deduction-guides:
+    - match: '(?={{identifier}}\s*\([\sA-Za-z\.]*\)\s*->)'
+      set:
+        - scope: entity.name.function.deduction-guide
+          match: '{{identifier}}'
+          set: [deduction-guide-arrow, parameter-paren]
+
+  deduction-guide-arrow:
+    - scope: punctuation
+      match: '->'
+      set: [statement-terminator-pop, typename-typeid]
 
   namespace-declars:
     - scope: storage.type.namespace
@@ -179,7 +192,7 @@ contexts:
           pop: true
 
   statement-terminator:
-    - include: statement-terminators
+    - include: statement-terminator-pop
     - match: '(?=\S)'
       pop: true
 
@@ -559,7 +572,7 @@ contexts:
 
   declar-declarator-end:
     - include: declar-separator
-    - include: statement-terminators
+    - include: statement-terminator-pop
     - include: pure-virtuals
     - match: '(?=\S)'
       pop: true
@@ -579,7 +592,7 @@ contexts:
   initializer-content:
     - include: brace-initializer
     - include: declar-separator
-    - include: statement-terminators
+    - include: statement-terminator-pop
     - include: expressions
     - match: '(?=\}|\)|\])'
       pop: true
@@ -772,6 +785,8 @@ contexts:
     - include: param-noptr-declarators
 
   param-noptr-declarator:
+    - scope: punctuation
+      match: '\.\.\.'
     - include: param-declar-separator
     - scope: variable.parameter.function
       match: '{{identifier}}(?=\s*\()'
@@ -806,12 +821,12 @@ contexts:
 
   param-after-noptr-declarator:
     - include: param-declar-separator
-    - include: statement-terminators
+    - include: statement-terminator-pop
     - scope: keyword.operator
       match: '='
       set: 
         - include: param-declar-separator
-        - include: statement-terminators
+        - include: statement-terminator-pop
         - include: expressions
     - match: '(?=\S)'
       pop: true
@@ -888,7 +903,7 @@ contexts:
           match: '\}'
           pop: true
 
-  statement-terminators:
+  statement-terminator-pop:
     - scope: punctuation
       match: ';'
       pop: true
@@ -1127,6 +1142,9 @@ contexts:
 
   class-inheritance-list-then:
     - scope: punctuation
+      match: '\.\.\.'
+
+    - scope: punctuation
       match: '\,'
       set: class-inheritance-list
     - match: '(?=\S)'
@@ -1151,6 +1169,8 @@ contexts:
         - include: template-declars
         - include: global-declars
         - include: statement-groups
+        - scope: punctuation
+          match: ';'
 
 
         - scope: punctuation.unmatched.begin
