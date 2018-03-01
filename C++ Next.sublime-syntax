@@ -83,14 +83,17 @@ contexts:
   global:
     - include: scope:source.c#incomplete-inc
     - include: preprocessor-others
+    - include: near-global
+    # - scope: punctuation.unmatched
+    #   match: '\}'
+
+  near-global:
     - include: using-statements
     - include: template-declars
     - include: namespace-declars
     - include: deduction-guides
     - include: global-declars
     - include: statement-groups
-    # - scope: punctuation.unmatched
-    #   match: '\}'
 
   deduction-guides:
     - match: '(?={{identifier}}\s*\([\sA-Za-z\.]*\)\s*->)'
@@ -111,11 +114,7 @@ contexts:
         - scope: punctuation
           match: '\{'
           set: 
-            - include: using-statements
-            - include: template-declars
-            - include: namespace-declars
-            - include: global-declars
-            - include: statement-groups
+            - include: near-global
             - scope: punctuation
               match: '\}'
               pop: true
