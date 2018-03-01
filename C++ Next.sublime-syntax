@@ -97,7 +97,7 @@ contexts:
 
   deduction-guides:
     - match: '(?={{identifier}}\s*\([\sA-Za-z\.]*\)\s*->)'
-      set:
+      push:
         - scope: entity.name.function.deduction-guide
           match: '{{identifier}}'
           set: [deduction-guide-arrow, parameter-paren]
