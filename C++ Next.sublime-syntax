@@ -16,7 +16,7 @@ file_extensions:
   - h++
   - inl
   - ipp
-first_line_match: '-\*- C\+\+(1z)? -\*-'
+first_line_match: '-\*- C\+\+(1z|17)? -\*-'
 
 scope: source.c++1z
 
@@ -165,8 +165,21 @@ contexts:
                   pop: true
             - match: '(?=\S)'
               pop: true
+        - scope: meta.definition.using
+          match: '{{identifier}}'
+          set:
+            - scope: punctuation.definition
+              match: '\='
+              set: [statement-terminator, typename-typeid]
+            - match: '(?=\S)'
+              pop: true
         - match: '(?=\S)'
           pop: true
+
+  statement-terminator:
+    - include: statement-terminators
+    - match: '(?=\S)'
+      pop: true
 
   for-statements:
     - scope: keyword.control.for
@@ -216,7 +229,7 @@ contexts:
     - scope: storage.type.struct-or-union
       match: '{{aggregate_types}}'
       set: [typename-after-typeid, struct-or-union-head]
-    - scope: storage.modifier.c++
+    - scope: storage.modifier.a.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: typename-after-typeid
     - scope: storage.type
@@ -368,7 +381,7 @@ contexts:
       push: global-declar
 
   declar:
-    - scope: storage.modifier.c++
+    - scope: storage.modifier.b.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: declar-after-modifier
     - match: '(?=\b(?:operator)\b)'
@@ -377,7 +390,7 @@ contexts:
       set: [declar-declarator-end, declar-after-typeid, declar-common-context]
 
   global-declar:
-    - scope: storage.modifier.c++
+    - scope: storage.modifier.f.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: global-declar-after-modifier
     - match: '(?=\b(?:operator)\b)'
@@ -396,7 +409,7 @@ contexts:
       pop: true
 
   declar-after-modifier:
-    - scope: storage.modifier.c++
+    - scope: storage.modifier.g.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       set: declar-after-modifier
     # - include: declar-after-modifier-common
@@ -450,7 +463,7 @@ contexts:
     - scope: keyword
       match: '\b(?:operator)\b'
       set: [parameter-paren, entity-name-function-operator, operator-entity-function-name]
-    - scope: entity.name.function
+    - scope: entity.name.function.b
       match: '{{identifier}}(?=\s*\(\))'
       set: parameter-paren
 
@@ -497,12 +510,22 @@ contexts:
     - scope: keyword
       match: '\b(?:operator)\b'
       set: [parameter-paren, entity-name-function-operator, operator-entity-function-name]
-    - scope: entity.name.function
+    - scope: entity.name.function.c
       match: '{{identifier}}(?=\s*\()'
-      set: [parameter-paren]
+      set: [qualifier-after-function, parameter-paren]
     - scope: meta.identifier.global
       match: '{{identifier}}'
       set: [global-after-declarator]
+
+  qualifier-after-function:
+    - scope: keyword.qualifier.ref
+      match: '(?:&&|&)'
+    - scope: keyword.qualifier.const
+      match: '(?:const)'
+    - scope: keyword.qualifier.noexcept
+      match: '(?:noexcept)'
+    - match: '(?=\S)'
+      pop: true
 
   declar-end-paren:
     - scope: punctuation
@@ -534,7 +557,7 @@ contexts:
 
   declar-declarator-end:
     - include: declar-separator
-    - include: statement-terminator
+    - include: statement-terminators
     - include: pure-virtuals
     - match: '(?=\S)'
       pop: true
@@ -554,7 +577,7 @@ contexts:
   initializer-content:
     - include: brace-initializer
     - include: declar-separator
-    - include: statement-terminator
+    - include: statement-terminators
     - include: expressions
     - match: '(?=\}|\)|\])'
       pop: true
@@ -728,7 +751,7 @@ contexts:
       pop: true
 
   entity-name-function:
-    - meta_scope: entity.name.function
+    - meta_scope: entity.name.function.a
     - match: ''
       pop: true
 
@@ -751,7 +774,7 @@ contexts:
     - scope: variable.parameter.function
       match: '{{identifier}}(?=\s*\()'
       set: [param-after-declarator, parameter-paren]
-    - scope: storage.modifier.c++
+    - scope: storage.modifier.c.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
     - scope: variable.parameter
       match: '{{identifier}}'
@@ -781,12 +804,12 @@ contexts:
 
   param-after-noptr-declarator:
     - include: param-declar-separator
-    - include: statement-terminator
+    - include: statement-terminators
     - scope: keyword.operator
       match: '='
       set: 
         - include: param-declar-separator
-        - include: statement-terminator
+        - include: statement-terminators
         - include: expressions
     - match: '(?=\S)'
       pop: true
@@ -808,7 +831,7 @@ contexts:
     - scope: storage.type.struct-or-union
       match: '{{aggregate_types}}'
       push: [param-after-typeid, struct-or-union-head]
-    - scope: storage.modifier.c++
+    - scope: storage.modifier.d.c++
       match: '\b(?:{{decl_specifiers_no_type}}|{{cv_qualifiers}})\b'
       push: [param-after-typeid, typename-typeid]
     - scope: storage.type
@@ -863,7 +886,7 @@ contexts:
           match: '\}'
           pop: true
 
-  statement-terminator:
+  statement-terminators:
     - scope: punctuation
       match: ';'
       pop: true
@@ -1044,7 +1067,7 @@ contexts:
     - match: '(?=\S)'
 
   class-modifiers:
-    - scope: storage.modifier.c++
+    - scope: storage.modifier.e.c++
       match: '\b(?:{{visibility_modifiers}})\b'
       push:
         - scope: punctuation
