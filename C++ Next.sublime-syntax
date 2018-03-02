@@ -146,6 +146,8 @@ contexts:
       pop: true
 
   template-definition-entity:
+    - scope: punctuation
+      match: '\.\.\.'
     - scope: entity.name.type.template.c++
       match: '{{identifier}}'
       pop: true
@@ -233,6 +235,9 @@ contexts:
     - scope: punctuation.scope
       match: '::'
       set: [typename-after-typeid, scoped-maybe-type-then]
+    - scope: storage.type.typename
+      match: '\b(?:typename)\b'
+      set: [typename-after-typeid, scoped-typenamed-type]
     - match: '(?=\S)'
       set: [typename-after-typeid, scoped-maybe-type]
 
@@ -322,6 +327,33 @@ contexts:
       pop: true
     - match: '(?=\S)'
       pop: true
+
+  scoped-typenamed-type:
+    - scope: punctuation
+      match: '::'
+      set: scoped-typenamed-type-then
+    - match: '(?=\S)'
+      set: scoped-typenamed-type-then
+
+  scoped-typenamed-type-helper:
+    - scope: punctuation
+      match: '::'
+      set: scoped-typenamed-type-then
+
+  scoped-typenamed-type-then:
+    - scope: storage.type.maybe.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set: scoped-typenamed-type-helper
+    - scope: storage.type.maybe
+      match: '{{identifier}}'
+      set: 
+        - match: '(?=\<)'
+          set: [scoped-typenamed-type-helper, template-angle-paren]
+        - match: '(?=\S)'
+          pop: true
+    - match: '(?=\S)'
+      pop: true
+
 
   scoped-constructor:
     - scope: punctuation
@@ -1035,7 +1067,13 @@ contexts:
       pop: true
     - scope: entity.name.class
       match: ({{identifier}})
-      set: [class-constructor-name, test, class-open-brace, class-inheritance-spec]
+      set: [class-constructor-name, test, class-open-brace, class-inheritance-spec, after-class-head-name]
+    - match: '(?=\S)'
+      pop: true
+
+  after-class-head-name:
+    - match: '(?=\<)'
+      set: template-angle-paren
     - match: '(?=\S)'
       pop: true
 
@@ -1129,6 +1167,7 @@ contexts:
       pop: true
     - include: class-modifiers
     - include: template-declars
+    - include: using-statements
     - include: global-declars
 
   class-head:
@@ -1191,6 +1230,7 @@ contexts:
           push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor]
         - include: class-modifiers
         - include: template-declars
+        - include: using-statements
         - include: global-declars
         - include: statement-groups
         - scope: punctuation
