@@ -1104,7 +1104,13 @@ contexts:
   constructor-initializer-list:
     - scope: meta.initializer-list.field
       match: '{{identifier}}'
-      set: [after-constructor-initializer-field, initializer-field-paren]
+      set: [after-constructor-initializer-field, initializer-field-paren, initializer-field-angle]
+    - match: '(?=\S)'
+      pop: true
+
+  initializer-field-angle:
+    - match: '(?=\<)'
+      set: template-angle-paren
     - match: '(?=\S)'
       pop: true
 
