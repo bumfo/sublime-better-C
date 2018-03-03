@@ -58,7 +58,7 @@ variables:
 
   visibility_modifiers: 'public|protected|private'
 
-  basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto'
+  basic_types: 'char|char16_t|char32_t|wchar_t|bool|short|int|long|signed|unsigned|float|double|void|auto|size_t'
 
   word_operators: '(?:\bthrow|\bnew\s*\[\s*\]|\bdelete\s*\[\s*\]|\bnew\b|\bdelete\b)'
   function_operators: '(?:\bthrow|\bnew\s*\[\s*\]|\bdelete\s*\[\s*\]|\bnew\b|\bdelete\b|\+=|-=|\*=|/=|%=|^=|&=|\|=|<<|>>|>>=|<<=|==|=|!=|<=|>=|<|>|&&|\|\||\+\+|--|\+|->\*|->|-|\*|/|%|\^|&|\||,|~|!|\(\s*\)|\[\s*\])'
@@ -70,7 +70,7 @@ variables:
 
   aggregate_types: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}}|{{enum_specifiers}})\b'
 
-  non_identifier_words: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}}|{{enum_specifiers}}|{{basic_types}}|{{control_keywords}})|template\b'
+  non_identifier_words: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}}|{{enum_specifiers}}|{{basic_types}}|{{control_keywords}}|template)\b'
 
 contexts:
 
@@ -137,6 +137,9 @@ contexts:
       set: [template-definition-end, template-definition-storage]
   
   template-definition-storage:
+    - scope: keyword.template
+      match: '\b(?:template)\b'
+      push: template-definition
     - scope: storage.type.typename
       match: '\b(?:typename|class)\b'
       set: template-definition-entity
@@ -148,7 +151,7 @@ contexts:
   template-definition-entity:
     - scope: punctuation
       match: '\.\.\.'
-    - scope: entity.name.type.template.c++
+    - scope: entity.name.template.c++
       match: '{{identifier}}'
       pop: true
     - match: '(?=\S)'
