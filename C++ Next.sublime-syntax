@@ -70,7 +70,7 @@ variables:
 
   aggregate_types: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}}|{{enum_specifiers}})\b'
 
-  non_identifier_words: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}}|{{enum_specifiers}}|{{basic_types}}|{{control_keywords}})\b'
+  non_identifier_words: '\b(?:{{class_specifiers}}|{{struct_or_union_specifiers}}|{{enum_specifiers}}|{{basic_types}}|{{control_keywords}})|template\b'
 
 contexts:
 
@@ -552,6 +552,8 @@ contexts:
       pop: true
 
   global-declarator-id:
+    - match: '(?={{non_identifier_words}})'
+      pop: true
     - scope: keyword
       match: '\b(?:operator)\b'
       set: [qualifier-after-function, parameter-paren, entity-name-function-operator, operator-entity-function-name]
@@ -1072,6 +1074,8 @@ contexts:
 
 
   class-head-name:
+    - match: '(?={{non_identifier_words}})'
+      pop: true
     - scope: meta.name.class
       match: ({{identifier}})(?=\s*(?:\;|{{identifier}}))
       pop: true
@@ -1090,6 +1094,8 @@ contexts:
   class-open-brace:
     - scope: punctuation
       match: '\{'
+      pop: true
+    - match: '(?=\S)'
       pop: true
 
   after-parameter-paren:
