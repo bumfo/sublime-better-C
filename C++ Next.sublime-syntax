@@ -420,6 +420,8 @@ contexts:
     - scope: entity.name.function.destructor
       match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*~\s*\1\s*\()'
       push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
+    - scope: storage.type.typename
+      match: '\b(?:typename)\b'
     - match: '(?={{declar_lookahead}})'
       push: global-declar
 
@@ -679,6 +681,13 @@ contexts:
         - scope: punctuation
           match: '::'
           set: scoped-using-variable-then
+    - scope: keyword
+      match: '\b(?:operator)\b'
+      set:
+        - meta_scope: meta.variable.using.operator
+        - match: '{{function_operators}}'
+          pop: true
+
     - scope: meta.variable.using
       match: '{{identifier}}'
       pop: true
@@ -958,6 +967,7 @@ contexts:
 
 
   statements:
+    - include: using-statements
     - include: for-statements
     - scope: keyword.control
       match: '\b(?:{{control_keywords}})\b'
