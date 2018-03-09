@@ -356,7 +356,7 @@ contexts:
 
     - include: expr_literals
     
-    - scope: punctuation.section
+    - scope: punctuation
       match: '[\(\)\[\]\{\}]'
     - scope: punctuation.accessor
       match: '\.|\->'

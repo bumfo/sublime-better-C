@@ -134,7 +134,7 @@ contexts:
   template-definition:
     - scope: punctuation.definition.template.begin.c++
       match: '<'
-      set: [template-definition-end, template-definition-storage]
+      set: [template-definition-end, template-definition-default, template-definition-storage]
   
   template-definition-storage:
     - scope: keyword.template
@@ -157,10 +157,22 @@ contexts:
     - match: '(?=\S)'
       pop: true
 
+  template-definition-default:
+    - scope: keyword.operator.default
+      match: '='
+      set: 
+        - match: (?=,|>)
+          pop: true
+        - include: typenames
+        - include: expressions
+
+    - match: '(?=\S)'
+      pop: true
+
   template-definition-end:
     - scope: punctuation.separator
       match: ','
-      set: [template-definition-end, template-definition-storage]
+      set: [template-definition-end, template-definition-default, template-definition-storage]
     - scope: punctuation.definition.template.end.c++
       match: '>'
       pop: true
@@ -574,6 +586,10 @@ contexts:
       match: '(?:const)'
     - scope: keyword.qualifier.noexcept
       match: '(?:noexcept)'
+    - scope: keyword.qualifier.override
+      match: '(?:override)'
+    - scope: keyword.qualifier.final
+      match: '(?:final)'
     - match: '(?=\S)'
       pop: true
 
