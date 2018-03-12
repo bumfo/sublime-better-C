@@ -40,7 +40,8 @@ variables:
       (?:<\s*{{top_level_template_content}}>)|
       (?:<\s*
         (?:(?:{{template_item}}\s*)(?:,\s*{{template_item}}\s*)*<\s*)*
-        (?:(?:{{template_item}}\s*)(?:,\s*{{template_item}}\s*)*<\s*{{top_level_template_content}}>\s*{{path_lookahead_child_optional}})(?:,\s*(?:{{template_item}}\s*(?:<\s*{{top_level_template_content}}\s*>\s*{{path_lookahead_child_optional}}\s*)?)?)*
+        (?:(?:{{template_item}}\s*)(?:,\s*{{template_item}}\s*)*<\s*{{top_level_template_content}}>\s*{{path_lookahead_child_optional}}\s*[*&]*\s*)
+        (?:,\s*(?:{{template_item}}\s*(?:<\s*{{top_level_template_content}}\s*>\s*{{path_lookahead_child_optional}}\s*[*&]*\s*)?)?)*
       >)|
       (?:<\s*
 
