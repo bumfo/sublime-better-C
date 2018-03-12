@@ -35,6 +35,7 @@ variables:
   top_level_template_content: '(?:(?:{{template_item}}\s*)(?:,\s*(?:{{template_item}}\s*)?)*)?'
   template_lookahead: |-
     (?x)
+    (?!<<)
     (?:
       (?:<\s*{{top_level_template_content}}>)|
       (?:<\s*
@@ -488,6 +489,9 @@ contexts:
     - scope: storage.type.class
       match: '\b(?:{{class_specifiers}})\b'
       set: class-head
+    - scope: storage.type.class
+      match: '\b(?:{{struct_specifiers}})\b'
+      set: struct-head
     - scope: storage.type.struct-or-union
       match: '\b(?:{{struct_or_union_specifiers}})\b'
       set: struct-or-union-head
@@ -571,13 +575,19 @@ contexts:
       pop: true
     - scope: keyword
       match: '\b(?:operator)\b'
-      set: [qualifier-after-function, parameter-paren, entity-name-function-operator, operator-entity-function-name]
+      set: [function-trailing-type, qualifier-after-function, parameter-paren, entity-name-function-operator, operator-entity-function-name]
     - scope: entity.name.function.c
       match: '{{identifier}}(?=\s*\()'
-      set: [qualifier-after-function, parameter-paren]
+      set: [function-trailing-type, qualifier-after-function, parameter-paren]
     - scope: meta.identifier.global
       match: '{{identifier}}'
       set: [global-after-declarator]
+
+  function-trailing-type:
+    - scope: punctuation.definition.trailing-type
+      match: '->'
+    - match: '(?=\S)'
+      pop: true
 
   qualifier-after-function:
     - scope: keyword.qualifier.ref
@@ -1104,6 +1114,18 @@ contexts:
     - match: '(?=\S)'
       pop: true
 
+  struct-head-name:
+    - match: '(?={{non_identifier_words}})'
+      pop: true
+    - scope: meta.name.struct
+      match: ({{identifier}})(?=\s*(?:\;|{{identifier}}))
+      pop: true
+    - scope: entity.name.struct
+      match: ({{identifier}})
+      set: [class-constructor-name, test, class-open-brace, class-inheritance-spec, after-class-head-name]
+    - match: '(?=\S)'
+      pop: true
+
   after-class-head-name:
     - match: '(?=\<)'
       set: template-angle-paren
@@ -1213,6 +1235,11 @@ contexts:
 
   class-head:
     - include: class-head-name
+    - match: '(?=\S)'
+      pop: true
+
+  struct-head:
+    - include: struct-head-name
     - match: '(?=\S)'
       pop: true
 
