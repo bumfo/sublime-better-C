@@ -150,8 +150,19 @@ contexts:
     - scope: storage.type.typename
       match: '\b(?:typename|class)\b'
       set: template-definition-entity
+    # - match: '(?={{declar_lookahead}})'
+    #   set: [declar-noptr-declarator, typename-after-typeid, declar-common-context]
     - match: '(?={{declar_lookahead}})'
-      set: [declar-noptr-declarator, typename-after-typeid, declar-common-context]
+      set: [template-definition-nontype-entity, typename-after-typeid, declar-common-context]
+    - match: '(?=\S)'
+      pop: true
+
+  template-definition-nontype-entity:
+    - scope: punctuation
+      match: '\.\.\.'
+    - scope: entity.name.template.c++
+      match: '{{identifier}}'
+      pop: true
     - match: '(?=\S)'
       pop: true
 
