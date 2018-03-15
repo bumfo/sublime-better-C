@@ -895,6 +895,11 @@ contexts:
   param-noptr-declarator:
     - scope: punctuation
       match: '\.\.\.'
+    - match: '(?=\=)'
+      push: 
+        - include: param-default
+        - match: '(?=\S)'
+          pop: true
     - include: param-declar-separator
     - scope: variable.parameter.function
       match: '{{identifier}}(?=\s*\()'
@@ -927,15 +932,20 @@ contexts:
         - match: '\)'
           set: param-after-declarator
 
-  param-after-noptr-declarator:
-    - include: param-declar-separator
-    - include: statement-terminator-pop
+  param-default:
     - scope: keyword.operator
       match: '='
       set: 
         - include: param-declar-separator
         - include: statement-terminator-pop
         - include: expressions
+        - match: '(?=[\),])'
+          pop: true
+
+  param-after-noptr-declarator:
+    - include: param-declar-separator
+    - include: statement-terminator-pop
+    - include: param-default
     - match: '(?=\S)'
       pop: true
 
