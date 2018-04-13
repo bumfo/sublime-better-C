@@ -28,9 +28,13 @@ variables:
   path_lookahead_content: (?:::\s*)?({{identifier}}\s*::\s*)+
   path_lookahead: '(?={{path_lookahead_content}})'
 
+  path_lookahead_optional_content_templatable: (?:::\s*)?(?:{{identifier}}(?:{{template_lookahead}})?\s*::\s*)*
+  path_lookahead_content_templatable: (?:::\s*)?({{identifier}}(?:{{template_lookahead}})?\s*::\s*)+
+  path_lookahead_templatable: '(?={{path_lookahead_content_templatable}})'
+
   path_lookahead_child_optional: (?:::\s*{{identifier}}\s*)*(?:::)?
 
-  scopable_identifier: '(?!\b(?:new|delete|throw|template)\b){{path_lookahead_optional_content}}{{identifier}}'
+  scopable_identifier: '(?!\b(?:new|delete|throw|template)\b){{path_lookahead_optional_content_templatable}}{{identifier}}'
   template_item: '[^<>,]*'
   top_level_template_content: '(?:(?:{{template_item}}\s*)(?:,\s*(?:{{template_item}}\s*)?)*)?'
   template_lookahead: |-
@@ -59,7 +63,7 @@ variables:
   class_specifiers: 'class'
   struct_specifiers: 'struct'
   union_specifiers: 'union'
-  enum_specifiers: 'enum'
+  enum_specifiers: 'enum\s+class|enum'
   cv_qualifiers: 'const|volatile'
   struct_or_union_specifiers: 'struct|union'
 
@@ -226,6 +230,28 @@ contexts:
     - include: statement-terminator-pop
     - match: '(?=\S)'
       pop: true
+
+  case-statements:
+    - scope: keyword.control.case
+      match: '\b(?:case)\b'
+      push:
+        - scope: punctuation.separator.case
+          match: ':'
+          pop: true
+        - scope: meta.case.identifier 
+          match: '(?={{identifier}})'
+          push: scoped-identifier
+        - include: expressions
+        - match: '(?=\S)'
+          pop: true
+    - scope: keyword.control.default
+      match: '\b(?:default)\b'
+      push:
+        - scope: punctuation.separator.case
+          match: ':'
+          pop: true
+        - match: '(?=\S)'
+          pop: true
 
   for-statements:
     - scope: keyword.control.for
@@ -398,13 +424,19 @@ contexts:
     - match: '(?=\S)'
       set: scoped-constructor-then
 
+
+  scoped-constructor-then-simple:
+    - scope: punctuation
+      match: '::'
+      set: scoped-constructor-then
+
   scoped-constructor-then:
+    - scope: meta.entity.name.function.constructor.template
+      match: '{{identifier}}(?=\s*{{template_lookahead}}\s*::\s*\b[[:alpha:]_])'
+      set: [scoped-constructor-then-simple, template-angle-paren]
     - scope: meta.entity.name.function.constructor.namespace
       match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
-      set:
-        - scope: punctuation
-          match: '::'
-          set: scoped-constructor-then
+      set: scoped-constructor-then-simple
     - scope: meta.entity.name.function.constructor
       match: '{{identifier}}'
       pop: true
@@ -448,14 +480,14 @@ contexts:
       push: declar
 
   global-declars:
-    - match: '(?={{path_lookahead_optional_content}}(?:{{identifier}})\s*::\s*operator\b)'
-      push: [after-constructor-parameter-paren, parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
+    - match: '(?={{path_lookahead_optional_content_templatable}}(?:{{identifier}})\s*::\s*operator\b)'
+      push: [after-constructor-parameters, parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
 
-    - match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*\1\s*\()'
-      push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
+    - match: '(?={{path_lookahead_optional_content_templatable}}({{identifier}})\s*::\s*\1\s*\()'
+      push: [after-constructor-parameters, parameter-paren, entity-name-function-constructor, scoped-constructor]
     - scope: entity.name.function.destructor
-      match: '(?={{path_lookahead_optional_content}}({{identifier}})\s*::\s*~\s*\1\s*\()'
-      push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor, scoped-destructor]
+      match: '(?={{path_lookahead_optional_content_templatable}}({{identifier}})\s*::\s*~\s*\1\s*\()'
+      push: [after-constructor-parameters, parameter-paren, entity-name-function-destructor, scoped-destructor]
     - scope: storage.type.typename
       match: '\b(?:typename)\b'
     - match: '(?={{declar_lookahead}})'
@@ -482,10 +514,10 @@ contexts:
   declar-after-modifier-common:
     - match: '(?=\b(?:operator)\b)'
       set: [parameter-paren, entity-name-function, scoped-entity-name-function-type-conversion]
-    - match: '(?={{path_lookahead_content}}(?:{{identifier}})\s*\()'
-      set: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-constructor]
-    - match: '(?={{path_lookahead_content}}(?:~{{identifier}})\s*\()'
-      set: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor, scoped-destructor]
+    - match: '(?={{path_lookahead_content_templatable}}(?:{{identifier}})\s*\()'
+      set: [after-constructor-parameters, parameter-paren, entity-name-function-constructor, scoped-constructor]
+    - match: '(?={{path_lookahead_content_templatable}}(?:~{{identifier}})\s*\()'
+      set: [after-constructor-parameters, parameter-paren, entity-name-function-constructor, scoped-destructor]
     - match: '(?={{identifier}}\s*\()'
       pop: true
 
@@ -564,11 +596,11 @@ contexts:
       pop: true
 
   global-declar-noptr-declarator:
-    - match: '(?={{path_lookahead_content}}(?:\b(?:operator)\b\s*{{function_operators}})(?:\s*\())'
+    - match: '(?={{path_lookahead_content_templatable}}(?:\b(?:operator)\b\s*{{function_operators}})(?:\s*\())'
       set: [parameter-paren, entity-name-function-operator, scoped-entity-name-function]
     - match: '(?={{scopable_identifier}}\s*{{template_lookahead}}\s*\()'
       set: [parameter-paren, template-angle-paren, entity-name-function, scoped-entity-name-function]
-    - match: '(?={{path_lookahead_content}}(?:{{identifier}})(?:\s*\())'
+    - match: '(?={{path_lookahead_content_templatable}}(?:{{identifier}})(?:\s*\())'
       set: [parameter-paren, entity-name-function, scoped-entity-name-function]
 
     - scope: storage.modifier.c++
@@ -613,13 +645,15 @@ contexts:
     - scope: keyword.qualifier.ref
       match: '(?:&&|&)'
     - scope: keyword.qualifier.const
-      match: '(?:const)'
+      match: '\b(?:const)\b'
     - scope: keyword.qualifier.noexcept
-      match: '(?:noexcept)'
+      match: '\b(?:noexcept)\b'
     - scope: keyword.qualifier.override
-      match: '(?:override)'
+      match: '\b(?:override)\b'
     - scope: keyword.qualifier.final
-      match: '(?:final)'
+      match: '\b(?:final)\b'
+    - scope: meta.invalid
+      match: '{{identifier}}'
     - match: '(?=\S)'
       pop: true
 
@@ -745,6 +779,34 @@ contexts:
     - match: '(?=\S)'
       pop: true
 
+
+  scoped-identifier:
+    - scope: punctuation
+      match: '::'
+      set: scoped-identifier-then
+    - match: '(?=\S)'
+      set: scoped-identifier-then
+
+  scoped-identifier-then:
+    - scope: meta.identifier.namespace
+      match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
+      set:
+        - scope: punctuation
+          match: '::'
+          set: scoped-identifier-then
+    - scope: keyword
+      match: '\b(?:operator)\b'
+      set:
+        - meta_scope: meta.identifier.operator
+        - match: '{{function_operators}}'
+          pop: true
+
+    - scope: meta.identifier
+      match: '{{identifier}}'
+      pop: true
+    - match: '(?=\S)'
+      pop: true
+
   free-identifiers:
     - scope: keyword
       match: '\b(?:operator)\b'
@@ -798,13 +860,19 @@ contexts:
     - match: '(?=\S)'
       set: scoped-entity-name-function-then
 
+
+  scoped-entity-name-function-then-simple:
+    - scope: punctuation
+      match: '::'
+      set: scoped-entity-name-function-then
+
   scoped-entity-name-function-then:
+    - scope: meta.entity.name.function.template
+      match: '{{identifier}}(?=\s*{{template_lookahead}}\s*::\s*\b[[:alpha:]_])'
+      set: [scoped-entity-name-function-then-simple, template-angle-paren]
     - scope: meta.entity.name.function.namespace
       match: '{{identifier}}(?=\s*::\s*\b[[:alpha:]_])'
-      set:
-        - scope: punctuation
-          match: '::'
-          set: scoped-entity-name-function-then
+      set: scoped-entity-name-function-then-simple
     - scope: keyword
       match: '\b(?:operator)\b'
       set:
@@ -1030,6 +1098,7 @@ contexts:
   statements:
     - include: using-statements
     - include: for-statements
+    - include: case-statements
     - scope: keyword.control
       match: '\b(?:{{control_keywords}})\b'
     - include: free-identifiers
@@ -1177,7 +1246,11 @@ contexts:
     - match: '(?=\S)'
       pop: true
 
-  after-constructor-parameter-paren:
+  after-constructor-parameters:
+    - match: ''
+      set: [after-constructor-parameter-paren-old, qualifier-after-function]
+
+  after-constructor-parameter-paren-old:
     - scope: punctuation
       match: ';'
       pop: true
@@ -1211,6 +1284,15 @@ contexts:
         - scope: punctuation
           match: '\)'
           pop: true
+    - scope: punctuation
+      match: '\{'
+      set:
+        - scope: punctuation.separator.arguments
+          match: ','
+        - include: expressions
+        - scope: punctuation
+          match: '\}'
+          pop: true
     - match: '(?=\S)'
       pop: true
 
@@ -1232,10 +1314,10 @@ contexts:
       pop: true
     - scope: entity.name.function.destructor
       match: (?<=\~)({{identifier}})
-      set: [class-constructor-name, test, after-constructor-parameter-paren, parameter-paren]
+      set: [class-constructor-name, test, after-constructor-parameters, parameter-paren]
     - scope: entity.name.function.constructor
       match: ({{identifier}})
-      set: [class-constructor-name, test, after-constructor-parameter-paren, parameter-paren]
+      set: [class-constructor-name, test, after-constructor-parameters, parameter-paren]
     - match: '(?=\S)'
 
   class-modifiers:
@@ -1323,9 +1405,9 @@ contexts:
       match: '\{'
       set:
         - match: '({{identifier}})(?=\s*\()'
-          push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-constructor]
+          push: [after-constructor-parameters, parameter-paren, entity-name-function-constructor]
         - match: '~({{identifier}})(?=\s*\()'
-          push: [after-constructor-parameter-paren, parameter-paren, entity-name-function-destructor]
+          push: [after-constructor-parameters, parameter-paren, entity-name-function-destructor]
         - include: class-modifiers
         - include: template-declars
         - include: using-statements
