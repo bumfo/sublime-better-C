@@ -22,15 +22,18 @@ variables:
 
   _word_operators: 'sizeof'
 
-  invalid_names: '\b(?:{{_simple_types}}|{{_type_modifiers}}|{{_control_keywords}}|{{_word_operators}})\b'
-
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+
+  invalid_names: '\b(?:{{_simple_types}}|{{_type_modifiers}}|{{_control_keywords}}|{{_word_operators}})\b'
+  valid_names: '(?!{{invalid_names}}){{identifier}}'
 
   type_modifiers: '\b(?:{{_type_modifiers}})\b'
   basic_types: '\b(?:{{_basic_types}})\b'
   struct_like: '\b(?:struct|union)\b'
 
   test_declarations: '{{type_modifiers}}|{{basic_types}}|{{struct_like}}'
+
+  test_custom_type_passive: '{{valid_names}}(?:[\s\*])*(?:{{type_modifiers}}|{{valid_names}})'
 
 contexts:
   prototype:
@@ -40,18 +43,23 @@ contexts:
     - include: global
 
   global:
-    - include: statements
+    - include: statements # test
 
   statements:
     - include: declarations
 
+# declarations
+
   declarations:
     - match: '(?={{test_declarations}})'
+      push: [_meta_declarations, _declar_before_type]
+    - match: '(?={{test_custom_type_passive}})'
       push: [_meta_declarations, _declar_before_type]
 
   _declar_before_type:
     - include: type_modifiers
     - include: __declar_basic_types
+    - include: __declar_custom_types
     - include: _pop_nonspace
 
   _declar_after_basic_type:
@@ -70,9 +78,21 @@ contexts:
         - match: ''
           set: _declar_after_basic_type
 
+  __declar_custom_types:
+    - match: '(?={{valid_names}})'
+      set:
+        - include: custom_types
+        - match: ''
+          set: _declar_after_type
+
   _meta_declarations:
     - meta_scope: meta.declarations.c
     - include: _pop_immediate
+
+
+
+
+# util
 
   _pop_nonspace:
     - match: '(?=\S)'
@@ -89,6 +109,10 @@ contexts:
       match: '\b(?:{{_type_qualifiers}})\b'
     - scope: storage.modifier.directive.c
       match: '\b(?:{{_compiler_directives}})\b'
+
+  custom_types:
+    - scope: storage.type.custom.c
+      match: '{{valid_names}}'
 
   basic_types:
     - scope: storage.type.c
