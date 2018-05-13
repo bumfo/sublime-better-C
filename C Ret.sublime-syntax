@@ -21,10 +21,13 @@ variables:
   _control_keywords: 'return|if|else|switch|case|default|goto|for|do|while|break|continue'
 
   _word_operators: 'sizeof'
+  _typedef: 'typedef'
+
+  _other_keywords: '{{_word_operators}}|{{_typedef}}'
 
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
 
-  invalid_names: '\b(?:{{_simple_types}}|{{_type_modifiers}}|{{_control_keywords}}|{{_word_operators}})\b'
+  invalid_names: '\b(?:{{_simple_types}}|{{_type_modifiers}}|{{_control_keywords}}|{{_other_keywords}})\b'
   valid_names: '(?!{{invalid_names}}){{identifier}}'
 
   type_modifiers: '\b(?:{{_type_modifiers}})\b'
@@ -47,6 +50,7 @@ contexts:
     - include: statements # test
 
   statements:
+    - include: typedef_declarations
     - include: declarations
 
 # declarations
@@ -54,6 +58,11 @@ contexts:
   declarations:
     - match: '{{declarations_lookahead}}'
       push: [_declar_name, _meta_declarations_specifier, _declar_before_type]
+
+  typedef_declarations:
+    - scope: keyword.other.typedef.c
+      match: '\b(?:{{_typedef}})\b'
+      push: [_declar_typedef_type, _meta_declarations_typedef_specifier, _declar_before_type]
 
   _declar_before_type:
     - include: type_modifiers
@@ -128,10 +137,23 @@ contexts:
     - meta_scope: meta.declarations.specifier.c
     - include: _pop_immediate
 
+  _meta_declarations_typedef_specifier:
+    - meta_scope: meta.declarations.typedef.specifier.c
+    - include: _pop_immediate
+
   _declar_name:
     - match: '(?={{valid_names}})'
       set:
-        - include: declar_names
+        - include: declar_function_names
+        - include: declar_other_names
+        - match: ''
+          pop: true
+    - include: _pop_nonspace
+
+  _declar_typedef_type:
+    - match: '(?={{valid_names}})'
+      set:
+        - include: declar_typedef_types
         - match: ''
           pop: true
     - include: _pop_nonspace
@@ -173,8 +195,18 @@ contexts:
     - scope: entity.name.struct-or-union.c
       match: '{{valid_names}}'
 
-  declar_names:
-    - scope: entity.name.c
+  declar_function_names:
+    - scope: entity.name.function.forward-decl.c
+      match: '{{valid_names}}(?=\([^;]+;)'
+    - scope: entity.name.function.c
+      match: '{{valid_names}}(?=\()'
+
+  declar_other_names:
+    - scope: entity.name.other.c
+      match: '{{valid_names}}'
+
+  declar_typedef_types:
+    - scope: entity.name.type.c
       match: '{{valid_names}}'
 
   simple_braces:
