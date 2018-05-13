@@ -59,6 +59,7 @@ contexts:
   _declar_before_type:
     - include: type_modifiers
     - include: __declar_basic_types
+    - include: __declar_struct_like
     - include: __declar_custom_types
     - include: _pop_nonspace
 
@@ -66,14 +67,14 @@ contexts:
     - include: type_modifiers
     - include: __declar_basic_types
     - include: __declar_pointer
-    - match: '(?=\s*(?=\S)(?!\*|{{type_modifiers}}|{{basic_types}}))'
+    - match: '(?=\s*(?!\*|{{type_modifiers}}|{{basic_types}})\S)'
       pop: true
     - include: _pop_nonspace
 
   _declar_after_type:
     - include: type_modifiers
     - include: __declar_pointer
-    - match: '(?=\s*(?=\S)(?!\*|{{type_modifiers}}))'
+    - match: '(?=\s*(?!\*|{{type_modifiers}})\S)'
       pop: true
     - include: _pop_nonspace
 
@@ -83,6 +84,39 @@ contexts:
         - include: basic_types
         - match: ''
           set: _declar_after_basic_type
+
+  __declar_struct_like:
+    - match: '(?={{struct_like}})'
+      set:
+        - include: struct_like
+        - match: ''
+          set: [_declar_after_type, _struct_like_body, _struct_like_tag]
+
+  _struct_like_tag:
+    - match: '(?={{valid_names}})'
+      set:
+        - include: struct_like_names
+        - match: ''
+          pop: true
+    - include: _pop_nonspace
+
+  _struct_like_body:
+    - scope: punctuation.section.begin.c
+      match: '\{'
+      push:
+        - include: simple_braces
+        - scope: punctuation.section.end.c
+          match: '\}'
+          pop: true
+    - match: '(?=\s*(?!\{)\S)'
+      pop: true
+    - include: _pop_nonspace
+
+  simple_braces:
+    - match: '\{'
+      push:
+        - match: '\}'
+          pop: true
 
   __declar_custom_types:
     - match: '(?={{valid_names}})'
@@ -121,10 +155,19 @@ contexts:
     - scope: storage.modifier.directive.c
       match: '\b(?:{{_compiler_directives}})\b'
 
+  basic_types:
+    - scope: storage.type.c
+      match: '{{basic_types}}'
+
+  struct_like:
+    - scope: storage.type.c
+      match: '{{struct_like}}'
+
   custom_types:
     - scope: storage.type.custom.c
       match: '{{valid_names}}'
 
-  basic_types:
-    - scope: storage.type.c
-      match: '{{basic_types}}'
+  struct_like_names:
+    - scope: entity.name.struct-or-union.c
+      match: '{{valid_names}}'
+
