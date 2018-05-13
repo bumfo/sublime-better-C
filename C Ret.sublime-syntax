@@ -52,9 +52,9 @@ contexts:
 
   declarations:
     - match: '(?={{test_declarations}})'
-      push: [_meta_declarations, _declar_before_type]
+      push: [_meta_declarations_specifier, _declar_before_type]
     - match: '(?={{test_custom_type_passive}})'
-      push: [_meta_declarations, _declar_before_type]
+      push: [_meta_declarations_specifier, _declar_before_type]
 
   _declar_before_type:
     - include: type_modifiers
@@ -65,14 +65,20 @@ contexts:
   _declar_after_basic_type:
     - include: type_modifiers
     - include: __declar_basic_types
+    - include: __declar_pointer
+    - match: '(?=\s*(?=\S)(?!\*|{{type_modifiers}}|{{basic_types}}))'
+      pop: true
     - include: _pop_nonspace
 
   _declar_after_type:
     - include: type_modifiers
+    - include: __declar_pointer
+    - match: '(?=\s*(?=\S)(?!\*|{{type_modifiers}}))'
+      pop: true
     - include: _pop_nonspace
 
   __declar_basic_types:
-    - match: '(?={{_basic_types}})'
+    - match: '(?={{basic_types}})'
       set:
         - include: basic_types
         - match: ''
@@ -85,8 +91,13 @@ contexts:
         - match: ''
           set: _declar_after_type
 
-  _meta_declarations:
-    - meta_scope: meta.declarations.c
+  __declar_pointer:
+    - scope: storage.modifier.pointer
+      match: '\*'
+      set: _declar_after_type
+
+  _meta_declarations_specifier:
+    - meta_scope: meta.declarations.specifier.c
     - include: _pop_immediate
 
 
