@@ -31,9 +31,10 @@ variables:
   basic_types: '\b(?:{{_basic_types}})\b'
   struct_like: '\b(?:struct|union)\b'
 
-  test_declarations_simple: '{{type_modifiers}}|{{basic_types}}|{{struct_like}}'
+  declarations_lookahead: '(?={{__test_declarations_simple}}|{{__test_custom_type_passive}})'
 
-  test_custom_type_passive: '{{valid_names}}(?:[\s\*])*(?:{{type_modifiers}}|{{valid_names}})'
+  __test_declarations_simple: '{{type_modifiers}}|{{basic_types}}|{{struct_like}}'
+  __test_custom_type_passive: '{{valid_names}}(?:[\s\*])*(?:{{type_modifiers}}|{{valid_names}})'
 
 contexts:
   prototype:
@@ -51,10 +52,8 @@ contexts:
 # declarations
 
   declarations:
-    - match: '(?={{test_declarations_simple}})'
-      push: [_meta_declarations_specifier, _declar_before_type]
-    - match: '(?={{test_custom_type_passive}})'
-      push: [_meta_declarations_specifier, _declar_before_type]
+    - match: '{{declarations_lookahead}}'
+      push: [_declar_name, _meta_declarations_specifier, _declar_before_type]
 
   _declar_before_type:
     - include: type_modifiers
@@ -95,7 +94,7 @@ contexts:
   _struct_like_tag:
     - match: '(?={{valid_names}})'
       set:
-        - include: struct_like_names
+        - include: struct_like_tags
         - match: ''
           pop: true
     - include: _pop_nonspace
@@ -128,6 +127,14 @@ contexts:
   _meta_declarations_specifier:
     - meta_scope: meta.declarations.specifier.c
     - include: _pop_immediate
+
+  _declar_name:
+    - match: '(?={{valid_names}})'
+      set:
+        - include: declar_names
+        - match: ''
+          pop: true
+    - include: _pop_nonspace
 
 
 
@@ -162,8 +169,12 @@ contexts:
     - scope: storage.type.custom.c
       match: '{{valid_names}}'
 
-  struct_like_names:
+  struct_like_tags:
     - scope: entity.name.struct-or-union.c
+      match: '{{valid_names}}'
+
+  declar_names:
+    - scope: entity.name.c
       match: '{{valid_names}}'
 
   simple_braces:

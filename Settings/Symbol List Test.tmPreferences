@@ -4,7 +4,8 @@
 	<key>name</key>
 	<string>Symbol List</string>
 	<key>scope</key>
-	<string>(source.c1y) &amp; (meta.declarations.specifier)</string>
+	<!-- <string>(source.c1y) &amp; (meta.declarations.specifier)</string> -->
+	<string>(source.c1y) &amp; (entity.name.c)</string>
 	<key>settings</key>
 	<dict>
 		<key>showInSymbolList</key>
