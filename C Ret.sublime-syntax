@@ -1,0 +1,95 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: C Ret
+file_extensions:
+  - c
+  - h
+first_line_match: '-[*]-( Mode:)? C -[*]-'
+scope: source.c1y
+
+variables:
+  _basic_types: 'void|signed|unsigned|char|short|int|long|float|double|signed|unsigned|_Bool|_Complex|_Imaginary'
+  _aggregate_types: 'struct|union|enum'
+  _simple_types: '{{_basic_types}}|{{_aggregate_types}}'
+
+  _storage_classes: 'static|extern|auto|register|_Thread_local'
+  _type_qualifiers: 'const|restrict|volatile|_Atomic'
+  _compiler_directives: 'inline|__restrict__|__restrict|_Noreturn'
+  _type_modifiers: '{{_storage_classes}}|{{_type_qualifiers}}|{{_compiler_directives}}'
+
+  _control_keywords: 'return|if|else|switch|case|default|goto|for|do|while|break|continue'
+
+  _word_operators: 'sizeof'
+
+  invalid_names: '\b(?:{{_simple_types}}|{{_type_modifiers}}|{{_control_keywords}}|{{_word_operators}})\b'
+
+  identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
+
+  type_modifiers: '\b(?:{{_type_modifiers}})\b'
+  basic_types: '\b(?:{{_basic_types}})\b'
+  struct_like: '\b(?:struct|union)\b'
+
+  test_declarations: '{{type_modifiers}}|{{basic_types}}|{{struct_like}}'
+
+contexts:
+  prototype:
+    - include: comments
+
+  main:
+    - include: global
+
+  global:
+    - include: statements
+
+  statements:
+    - include: declarations
+
+  declarations:
+    - match: '(?={{test_declarations}})'
+      push: [_meta_declarations, _declar_before_type]
+
+  _declar_before_type:
+    - include: type_modifiers
+    - include: __declar_basic_types
+    - include: _pop_nonspace
+
+  _declar_after_basic_type:
+    - include: type_modifiers
+    - include: __declar_basic_types
+    - include: _pop_nonspace
+
+  _declar_after_type:
+    - include: type_modifiers
+    - include: _pop_nonspace
+
+  __declar_basic_types:
+    - match: '(?={{_basic_types}})'
+      set:
+        - include: basic_types
+        - match: ''
+          set: _declar_after_basic_type
+
+  _meta_declarations:
+    - meta_scope: meta.declarations.c
+    - include: _pop_immediate
+
+  _pop_nonspace:
+    - match: '(?=\S)'
+      pop: true
+
+  _pop_immediate:
+    - match: ''
+      pop: true
+
+  type_modifiers:
+    - scope: storage.modifier.storage.c
+      match: '\b(?:{{_storage_classes}})\b'
+    - scope: storage.modifier.qualifier.c
+      match: '\b(?:{{_type_qualifiers}})\b'
+    - scope: storage.modifier.directive.c
+      match: '\b(?:{{_compiler_directives}})\b'
+
+  basic_types:
+    - scope: storage.type.c
+      match: '{{basic_types}}'
