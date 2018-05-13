@@ -21,9 +21,8 @@ variables:
   _control_keywords: 'return|if|else|switch|case|default|goto|for|do|while|break|continue'
 
   _word_operators: 'sizeof'
-  _typedef: 'typedef'
 
-  _other_keywords: '{{_word_operators}}|{{_typedef}}'
+  _other_keywords: '{{_word_operators}}|typedef'
 
   identifier: '\b[[:alpha:]_][[:alnum:]_]*\b'
 
@@ -32,6 +31,8 @@ variables:
 
   type_modifiers: '\b(?:{{_type_modifiers}})\b'
   basic_types: '\b(?:{{_basic_types}})\b'
+  struct: '\b(?:struct)\b'
+  union: '\b(?:union)\b'
   struct_like: '\b(?:struct|union)\b'
 
   declarations_lookahead: '(?={{__test_declarations_simple}}|{{__test_custom_type_passive}})'
@@ -61,7 +62,7 @@ contexts:
 
   typedef_declarations:
     - scope: keyword.other.typedef.c
-      match: '\b(?:{{_typedef}})\b'
+      match: '\b(?:typedef)\b'
       push: [_declar_typedef_type, _meta_declarations_typedef_specifier, _declar_before_type]
 
   _declar_before_type:
@@ -94,16 +95,29 @@ contexts:
           set: _declar_after_basic_type
 
   __declar_struct_like:
-    - match: '(?={{struct_like}})'
+    - match: '(?={{struct}})'
       set:
-        - include: struct_like
+        - include: struct
         - match: ''
-          set: [_declar_after_type, _struct_like_body, _struct_like_tag]
+          set: [_declar_after_type, _struct_like_body, _struct_tag]
+    - match: '(?={{union}})'
+      set:
+        - include: union
+        - match: ''
+          set: [_declar_after_type, _struct_like_body, _union_tag]
 
-  _struct_like_tag:
+  _struct_tag:
     - match: '(?={{valid_names}})'
       set:
-        - include: struct_like_tags
+        - include: struct_tags
+        - match: ''
+          pop: true
+    - include: _pop_nonspace
+
+  _union_tag:
+    - match: '(?={{valid_names}})'
+      set:
+        - include: union_tags
         - match: ''
           pop: true
     - include: _pop_nonspace
@@ -145,7 +159,7 @@ contexts:
     - match: '(?={{valid_names}})'
       set:
         - include: declar_function_names
-        - include: declar_other_names
+        - include: declar_variable_names
         - match: ''
           pop: true
     - include: _pop_nonspace
@@ -187,12 +201,28 @@ contexts:
     - scope: storage.type.c
       match: '{{struct_like}}'
 
+  struct:
+    - scope: storage.type.c
+      match: '{{struct}}'
+
+  union:
+    - scope: storage.type.c
+      match: '{{union}}'
+
   custom_types:
     - scope: storage.type.custom.c
       match: '{{valid_names}}'
 
-  struct_like_tags:
-    - scope: entity.name.struct-or-union.c
+  struct_tags:
+    - scope: entity.name.struct.forward-decl.c
+      match: '{{valid_names}}(?=[^;{]+;)'
+    - scope: entity.name.struct.c
+      match: '{{valid_names}}'
+
+  union_tags:
+    - scope: entity.name.union.forward-decl.c
+      match: '{{valid_names}}(?=[^;{]+;)'
+    - scope: entity.name.union.c
       match: '{{valid_names}}'
 
   declar_function_names:
@@ -201,8 +231,8 @@ contexts:
     - scope: entity.name.function.c
       match: '{{valid_names}}(?=\()'
 
-  declar_other_names:
-    - scope: entity.name.other.c
+  declar_variable_names:
+    - scope: variable.other.c
       match: '{{valid_names}}'
 
   declar_typedef_types:
