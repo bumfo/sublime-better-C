@@ -31,7 +31,7 @@ variables:
   basic_types: '\b(?:{{_basic_types}})\b'
   struct_like: '\b(?:struct|union)\b'
 
-  test_declarations: '{{type_modifiers}}|{{basic_types}}|{{struct_like}}'
+  test_declarations_simple: '{{type_modifiers}}|{{basic_types}}|{{struct_like}}'
 
   test_custom_type_passive: '{{valid_names}}(?:[\s\*])*(?:{{type_modifiers}}|{{valid_names}})'
 
@@ -51,7 +51,7 @@ contexts:
 # declarations
 
   declarations:
-    - match: '(?={{test_declarations}})'
+    - match: '(?={{test_declarations_simple}})'
       push: [_meta_declarations_specifier, _declar_before_type]
     - match: '(?={{test_custom_type_passive}})'
       push: [_meta_declarations_specifier, _declar_before_type]
