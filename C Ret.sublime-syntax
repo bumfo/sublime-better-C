@@ -104,6 +104,7 @@ contexts:
     - scope: punctuation.section.begin.c
       match: '\{'
       push:
+        - include: declarations
         - include: simple_braces
         - scope: punctuation.section.end.c
           match: '\}'
@@ -111,12 +112,6 @@ contexts:
     - match: '(?=\s*(?!\{)\S)'
       pop: true
     - include: _pop_nonspace
-
-  simple_braces:
-    - match: '\{'
-      push:
-        - match: '\}'
-          pop: true
 
   __declar_custom_types:
     - match: '(?={{valid_names}})'
@@ -171,3 +166,8 @@ contexts:
     - scope: entity.name.struct-or-union.c
       match: '{{valid_names}}'
 
+  simple_braces:
+    - match: '\{'
+      push:
+        - match: '\}'
+          pop: true
