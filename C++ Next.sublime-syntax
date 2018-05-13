@@ -928,7 +928,7 @@ contexts:
           match: '::'
           set: operator-type-conversion-then
     - scope: meta.entity.name.function.operator-type-conversion
-      match: '{{identifier}}'
+      match: '{{identifier}}(?:\s*[*&])*'
       set: operator-type-conversion-then
     - match: '(?=<)'
       set: [operator-type-conversion-then, template-angle-paren]

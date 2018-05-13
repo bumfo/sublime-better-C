@@ -1,6 +1,0 @@
-{
-	"shell_cmd": "/usr/local/Cellar/gcc/6.3.0_1/bin/g++-6 -O2 -std=c++14 -pedantic \"${file}\" -o \"${file_path}/${file_base_name}\"",
-	"file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
-	"working_dir": "${file_path}",
-	"selector": "source.c++",
-}

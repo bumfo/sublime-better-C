@@ -1,0 +1,22 @@
+{
+  "shell_cmd": "g++ -std=gnu++14 -pedantic \"${file}\" -o \"${file_path}/${file_base_name}\"",
+  "file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
+  "working_dir": "${file_path}",
+  "selector": "source.c++, source.c++14",
+
+  "variants":
+  [
+    {
+      "name": "O1",
+      "shell_cmd": "g++ -O1 -std=gnu++14 \"${file}\" -o \"${file_path}/${file_base_name}\""
+    },
+    {
+      "name": "O2",
+      "shell_cmd": "g++ -O2 -std=gnu++14 \"${file}\" -o \"${file_path}/${file_base_name}\""
+    },
+    {
+      "name": "O3",
+      "shell_cmd": "g++ -O3 -std=gnu++14 \"${file}\" -o \"${file_path}/${file_base_name}\""
+    },
+  ]
+}
