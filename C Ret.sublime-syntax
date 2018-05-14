@@ -43,9 +43,12 @@ variables:
   __test_unary_expression: '\+\+|\!|\~|\*|\&|\+|\-'
   __test_primary_expression: '\d|{{valid_names}}|[\(\{\[]'
 
+  integer_suffix: '(?i:U(?:LL|L)|(?:LL|L)U|U|LL|L)'
+
 contexts:
   prototype:
     - include: comments
+    - include: preprocessors
 
   main:
     - include: global
@@ -444,9 +447,7 @@ contexts:
       pop: true
 
   _primary_expressions:
-    - scope: constant.numeric.integer
-      match: '\d+'
-      pop: true
+    - include: __numeric_literals
     - scope: variable.function.c
       match: '{{valid_names}}(?=\s*\()'
       pop: true
@@ -457,6 +458,17 @@ contexts:
     - include: __expression_groups
     - include: __expression_eat_braces_and_brackets
     - include: _pop_immediate
+
+  __numeric_literals:
+    - scope: constant.numeric.hex.c
+      match: '\b0x[0-9a-fA-F]+{{integer_suffix}}?\b'
+      pop: true
+    - scope: constant.numeric.octal.c
+      match: '\b0[0-7]*{{integer_suffix}}?\b'
+      pop: true
+    - scope: constant.numeric.decimal.c
+      match: '\b[1-9]\d*{{integer_suffix}}?\b'
+      pop: true
 
   _call_expressions:
     - scope: keyword.operator.post-increment.c
@@ -570,7 +582,50 @@ contexts:
           match: '\*/'
           pop: true
 
+# directives
 
+  preprocessors:
+    - scope: punctuation.definition.directive.c
+      match: '^\s*#'
+      push:
+        - include: __preprocessors_incomplete_inc
+        - include: __preprocessors_include
+        - scope: keyword.control.directive.c
+          match: '\b(?:include|define|undef|if|ifdef|ifndef|elif|else|endif|line|error|pragma)\b'
+          set:
+            - match: '$'
+              pop: true
+        - match: '(?=\S)'
+          set:
+            - match: '$'
+              pop: true
+      with_prototype:
+        - match: '$'
+          pop: true
+
+  __preprocessors_incomplete_inc:
+    - match: '(?:i(?:nc?)?)\b\s*'
+      scope: meta.preprocessor.incomplete.c
+      pop: true
+
+  __preprocessors_include:
+    - scope: keyword.control.directive.c
+      match: '\b(?:include)\b'
+      set:
+        - scope: punctuation.definition.string.angle.begin.c
+          match: '<'
+          set:
+            - meta_scope: string.directive.c
+            - scope: punctuation.definition.string.angle.end.c
+              match: '>'
+              pop: true
+        - scope: punctuation.definition.string.normal.begin.c
+          match: '"'
+          set:
+            - meta_scope: string.directive.c
+            - scope: punctuation.definition.string.normal.end.c
+              match: '"'
+              pop: true
 
 # util
 
