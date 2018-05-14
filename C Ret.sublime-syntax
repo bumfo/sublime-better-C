@@ -299,7 +299,7 @@ contexts:
     - scope: punctuation
       match: '\='
       push:
-        - include: expressions
+        - include: expressions_no_comma
         - match: '(?=[,;)])'
           pop: true
     - include: _pop_nonspace
@@ -352,15 +352,20 @@ contexts:
 
 # expressions
 
-  expressions:
+  expressions_no_comma:
     - match: '(?={{__test_unary_expression}}|{{__test_primary_expression}})'
       push: [_meta_expression, _expressions]
+
+  expressions:
+    - include: expressions_no_comma
+    - scope: keyword.operator.comma.c
+      match: ','
 
   _expressions:
     - match: '(?={{__test_unary_expression}})'
       set: [_expressions, _unary_operators_pre]
     - match: '(?={{__test_primary_expression}})'
-      set: [_after_call_expressions, _call_expressions, _primary_expressions]
+      set: [_triple_operator_expressions, _binary_operator_expressions, _call_expressions, _primary_expressions]
     - include: _pop_nonspace
 
   _unary_operators_pre:
@@ -409,7 +414,7 @@ contexts:
       set:
         - scope: punctuation.separator.c
           match: ','
-        - include: expressions
+        - include: expressions_no_comma
         - scope: punctuation.section.arguments.end.c
           match: '\)'
           pop: true
@@ -422,9 +427,14 @@ contexts:
           pop: true
     - include: _pop_nonspace
 
-  _after_call_expressions:
+  _binary_operator_expressions:
     - match: '(?=\+|\-|\*|\/|\%|\^|\&|\||\.|\-\>|\=|<|>|<<|>>|!=)'
       set: [_expressions, _binary_operators]
+    - include: _pop_nonspace
+
+  _triple_operator_expressions:
+    - match: '(?=\?)'
+      set: [_expressions, _triple_operators]
     - include: _pop_nonspace
 
   _binary_operators:
@@ -442,6 +452,17 @@ contexts:
       pop: true
     - include: _pop_immediate
 
+  _triple_operators:
+    - scope: keyword.operator.triple.first.c
+      match: '\?'
+      set: [_triple_operators_continue, _expressions]
+    - include: _pop_immediate
+
+  _triple_operators_continue:
+    - scope: keyword.operator.triple.second.c
+      match: '\:'
+      pop: true
+    - include: _pop_nonspace
 
   __expression_groups:
     - scope: punctuation.section.paren.begin.c
