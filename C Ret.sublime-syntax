@@ -320,7 +320,7 @@ contexts:
 # expressions
 
   expressions:
-    - match: '(?=\+\+|\!|\~|\*|\&)'
+    - match: '(?=\+\+|\!|\~|\*|\&|\+|\-)'
       push: 
         - include: unary_operators_pre
         - match: ''
@@ -334,6 +334,10 @@ contexts:
   unary_operators_pre:
     - scope: keyword.operator.pre-increment.c
       match: '\+\+'
+    - scope: keyword.operator.unary-plus.c
+      match: '\+'
+    - scope: keyword.operator.unary-minus.c
+      match: '\-'
     - scope: keyword.operator.not.c
       match: '\!'
     - scope: keyword.operator.bitwise-not.c
@@ -378,7 +382,8 @@ contexts:
     - match: '(?=\+|\-|\*|\/|\%|\^|\&|\||\.|\-\>|\=|<|>|<<|>>)'
       set:
         - include: binary_operators
-        - include: _pop_nonspace
+        - match: ''
+          set: _expression
     - include: _pop_nonspace
 
   binary_operators:
