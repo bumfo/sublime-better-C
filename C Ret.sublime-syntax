@@ -64,7 +64,7 @@ contexts:
   typedef_declarations:
     - scope: keyword.other.typedef.c
       match: '\b(?:typedef)\b'
-      push: [_typedef_declar_list_continue, _declar_after_name, _declar_typedef_type, _meta_declarations_typedef_specifier, _declar_before_type]
+      push: [_typedef_declar_list_continue, _declar_after_name, _declar_typedef_name, _meta_declarations_typedef_specifier, _declar_before_type]
 
   _declar_list_continue:
     - scope: punctuation.separator.c
@@ -75,7 +75,7 @@ contexts:
   _typedef_declar_list_continue:
     - scope: punctuation.separator.c
       match: ','
-      set: [_typedef_declar_list_continue, _declar_after_name, _declar_typedef_type, _declar_after_type_and_modifiers]
+      set: [_typedef_declar_list_continue, _declar_after_name, _declar_typedef_name, _declar_after_type_and_modifiers]
     - include: _pop_nonspace
 
   _declar_before_type:
@@ -175,6 +175,7 @@ contexts:
     - meta_scope: meta.declarations.typedef.specifier.c
     - include: _pop_immediate
 
+
   _declar_name:
     - match: '(?={{valid_names}})'
       set:
@@ -203,13 +204,35 @@ contexts:
     - include: __declar_name_paren
     - include: _pop_nonspace
 
-  _declar_typedef_type:
+
+  _declar_typedef_name:
     - match: '(?={{valid_names}})'
       set:
-        - include: declar_typedef_types
-        - match: ''
-          pop: true
+        - include: declar_typedef_names
+        - include: _pop_immediate
+    - include: __declar_typedef_name_paren
     - include: _pop_nonspace
+
+  __declar_typedef_name_paren:
+    - scope: punctuation.section.paren.begin
+      match: '\('
+      set:
+        - match: '(?={{valid_names}})'
+          push: 
+            - include: declar_typedef_names
+            - include: _pop_immediate
+        - match: '(?=\*)'
+          push: [_declar_after_name, _declar_typedef_name, _declar_after_type_and_modifiers]
+        - match: '(?=\()'
+          push: _declar_typedef_name_paren
+        - scope: punctuation.section.paren.end
+          match: '\)'
+          pop: true
+
+  _declar_typedef_name_paren:
+    - include: __declar_typedef_name_paren
+    - include: _pop_nonspace
+
 
   _declar_after_name:
     - scope: punctuation.section.paren.begin.c
@@ -296,7 +319,7 @@ contexts:
     - scope: variable.other.c
       match: '{{valid_names}}'
 
-  declar_typedef_types:
+  declar_typedef_names:
     - scope: entity.name.type.c
       match: '{{valid_names}}'
 
