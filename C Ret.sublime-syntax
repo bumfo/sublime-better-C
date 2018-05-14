@@ -192,8 +192,14 @@ contexts:
 
 
   _declar_name_and_continue:
+    - include: __declar_name_function_definition
     - match: '(?={{valid_names}}|\()'
       set: [_declar_list_continue, _declar_initializer, _declar_after_name, _declar_name]
+    - include: _pop_nonspace
+
+  __declar_name_function_definition:
+    - match: '(?=(?:\(\s*(?:\*\s*)*)*{{valid_names}}\s*\()'
+      set: [_declar_function_definition_body, _declar_after_name, _declar_name]
 
 
   _declar_name:
@@ -271,7 +277,6 @@ contexts:
           pop: true
     - include: _pop_nonspace
 
-
   _declar_initializer:
     - scope: punctuation
       match: '\='
@@ -280,12 +285,7 @@ contexts:
           pop: true
     - include: _pop_nonspace
 
-
-  declar_function_definitions:
-    - match: '{{declarations_lookahead}}(?=(?:(?:{{identifier}}|\*)\s*)+\s*(?:\(\s*(?:\*\s*)*)*{{valid_names}}\s*\((?:[^;\{]+(?:$|\{)))'
-      push: [_declar_function_defination_body, _declar_after_name, _declar_name, _meta_declarations_specifier, _declar_before_type]
-
-  _declar_function_defination_body:
+  _declar_function_definition_body:
     - scope: punctuation.section.brace.begin.c
       match: '\{'
       set:
@@ -353,7 +353,7 @@ contexts:
 
   declar_function_names:
     - scope: entity.name.function.forward-decl.c
-      match: '{{valid_names}}(?=\s*\([^;]+;)'
+      match: '{{valid_names}}(?=\s*\((?:[^;{]+;|[^\(\)]*\)[^,;{]*[,;]))'
     - scope: entity.name.function.c
       match: '{{valid_names}}(?=\s*\()'
 
