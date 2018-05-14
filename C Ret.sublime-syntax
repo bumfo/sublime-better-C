@@ -278,13 +278,7 @@ contexts:
 
 
   _declar_after_name:
-    - scope: punctuation.section.paren.begin.c
-      match: '\('
-      set: 
-        - include: simple_parens
-        - scope: punctuation.section.paren.end.c
-          match: '\)'
-          pop: true
+    - include: __declar_parameters
     - scope: punctuation.section.bracket.begin.c
       match: '\['
       set: 
@@ -302,6 +296,60 @@ contexts:
         - include: expressions_no_comma
         - match: '(?=[,;)])'
           pop: true
+    - include: _pop_nonspace
+
+  __declar_parameters:
+    - match: '(?=\(\s*{{valid_names}}\s*(,\s*{{valid_names}}\s*)*\))'
+      set:
+        - scope: variable.parameter.c
+          match: '{{valid_names}}'
+        - scope: punctuation.separator.c
+          match: ','
+        - scope: punctuation.section.simple-param.begin.c
+          match: '\('
+        - scope: punctuation.section.simple-param.end.c
+          match: '\)'
+          pop: true
+    - scope: punctuation.section.param.begin.c
+      match: '\('
+      set: 
+        - scope: punctuation.separator.c
+          match: ','
+        - include: declar_parameter_contents
+        - scope: punctuation.section.param.end.c
+          match: '\)'
+          pop: true
+
+  declar_parameter_contents:
+    - match: '{{declarations_lookahead}}'
+      push: [_declar_after_name, _declar_parameter_name, _meta_declarations_specifier, _declar_before_type]
+
+  _declar_parameter_name:
+    - match: '(?={{valid_names}})'
+      set:
+        - include: declar_parameter_names
+        - include: _pop_immediate
+    - include: __declar_parameter_name_paren
+    - include: _pop_nonspace
+
+  __declar_parameter_name_paren:
+    - scope: punctuation.section.paren.begin
+      match: '\('
+      set:
+        - match: '(?={{valid_names}})'
+          push: 
+            - include: declar_parameter_names
+            - include: _pop_immediate
+        - match: '(?=\*)'
+          push: [_declar_after_name, _declar_parameter_name, _declar_after_type_and_modifiers]
+        - match: '(?=\()'
+          push: _declar_parameter_name_paren
+        - scope: punctuation.section.paren.end
+          match: '\)'
+          pop: true
+
+  _declar_parameter_name_paren:
+    - include: __declar_parameter_name_paren
     - include: _pop_nonspace
 
 # statements
@@ -571,6 +619,10 @@ contexts:
 
   declar_typedef_names:
     - scope: entity.name.type.c
+      match: '{{valid_names}}'
+
+  declar_parameter_names:
+    - scope: variable.parameter.c
       match: '{{valid_names}}'
 
   statement_terminators:
