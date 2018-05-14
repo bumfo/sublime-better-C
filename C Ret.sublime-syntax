@@ -201,6 +201,17 @@ contexts:
     - match: '(?=(?:\(\s*(?:\*\s*)*)*{{valid_names}}\s*\()'
       set: [_declar_function_definition_body, _declar_after_name, _declar_name]
 
+  _declar_function_definition_body:
+    - scope: punctuation.section.brace.begin.c
+      match: '\{'
+      set:
+        - include: statements
+        - scope: punctuation.section.brace.end.c
+          match: '\}'
+          pop: true
+    - match: '(?=\S)'
+      set: [_declar_list_continue, _declar_initializer]
+
 
   _declar_name:
     - match: '(?={{valid_names}})'
@@ -285,16 +296,7 @@ contexts:
           pop: true
     - include: _pop_nonspace
 
-  _declar_function_definition_body:
-    - scope: punctuation.section.brace.begin.c
-      match: '\{'
-      set:
-        - include: statements
-        - scope: punctuation.section.brace.end.c
-          match: '\}'
-          pop: true
-    - match: '(?=\S)'
-      set: [_declar_list_continue, _declar_initializer]
+
 
 
 # util
