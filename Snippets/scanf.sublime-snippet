@@ -2,5 +2,5 @@
 	<description>scanf …</description>
 	<content><![CDATA[scanf("${1:%d}"${1/([^%]|%%)*(%.)?.*/(?2:, :\);)/}$0${1/([^%]|%%)*(%.)?.*/(?2:\);)/}]]></content>
 	<tabTrigger>scanf</tabTrigger>
-	<scope>source.c11, source.c++11, source.c, source.objc, source.c++, source.objc++, source.c++1z</scope>
+	<scope>source.c11, source.c1y, source.c++11, source.c, source.objc, source.c++, source.objc++, source.c++1z</scope>
 </snippet>
