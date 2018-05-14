@@ -309,11 +309,11 @@ contexts:
       push: _expression
 
   statement_groups:
-    - scope: punctuation.section.brace.begin.c
+    - scope: punctuation.section.statements.begin.c
       match: '\{'
       push:
         - include: statements
-        - scope: punctuation.section.brace.end.c
+        - scope: punctuation.section.statements.end.c
           match: '\}'
           pop: true
 
@@ -325,11 +325,8 @@ contexts:
         - include: unary_operators_pre
         - match: ''
           set: _expression
-    - match: '(?=\d|[\(\{\[])'
-      push: 
-        - include: primary_expressions
-        - match: ''
-          set: [_after_call_expressions, _call_expressions]
+    - match: '(?=\d|{{valid_names}}|[\(\{\[])'
+      push: [_after_call_expressions, _call_expressions, _primary_expressions]
 
   unary_operators_pre:
     - scope: keyword.operator.pre-increment.c
@@ -347,12 +344,19 @@ contexts:
     - scope: keyword.operator.address.c
       match: '\&'
 
-  primary_expressions:
+  _primary_expressions:
     - scope: constant.numeric.integer
       match: '\d+'
-    - include: expression_groups
-    - include: simple_braces
-    - include: simple_parens
+      pop: true
+    - scope: variable.function.c
+      match: '{{valid_names}}(?=\s*\()'
+      pop: true
+    - scope: variable.other.c
+      match: '{{valid_names}}'
+      pop: true
+    - include: __expression_groups
+    - include: __expression_eat_braces_and_brackets
+    - include: _pop_immediate
 
   call_expressions:
     - scope: keyword.operator.post-increment.c
@@ -379,7 +383,7 @@ contexts:
     - include: _pop_nonspace
 
   _after_call_expressions:
-    - match: '(?=\+|\-|\*|\/|\%|\^|\&|\||\.|\-\>|\=|<|>|<<|>>)'
+    - match: '(?=\+|\-|\*|\/|\%|\^|\&|\||\.|\-\>|\=|<|>|<<|>>|!=)'
       set:
         - include: binary_operators
         - match: ''
@@ -387,21 +391,35 @@ contexts:
     - include: _pop_nonspace
 
   binary_operators:
+    - scope: punctuation.accessor.c
+      match: '\.|\-\>'
     - scope: keyword.operator.binary.compound.c
       match: '(?:\+|\-|\*|\/|\%|\^|\&|\||<<|>>)\='
     - scope: keyword.operator.binary.compare.c
-      match: '(?:\>|\<|\=)\='
+      match: '(?:\>|\<)\=?|(?:\=|\!)\='
     - scope: keyword.operator.binary.c
-      match: '\+|\-|\*|\/|\%|\^|\&|\||\,|\.|\-\>|\=|<<|>>'
+      match: '\+|\-|\*|\/|\%|\^|\&|\||\,|\=|<<|>>'
 
 
-  expression_groups:
+  __expression_groups:
     - scope: punctuation.section.paren.begin.c
       match: '\('
-      push:
+      set:
         - include: expressions
         - scope: punctuation.section.paren.end.c
           match: '\)'
+          pop: true
+
+  __expression_eat_braces_and_brackets:
+    - match: '\{'
+      set:
+        - include: expressions
+        - match: '\}'
+          pop: true
+    - match: '\['
+      set:
+        - include: expressions
+        - match: '\]'
           pop: true
 
   _expression:
@@ -470,7 +488,7 @@ contexts:
       match: '{{valid_names}}(?=\s*\()'
 
   declar_variable_names:
-    - scope: variable.other.c
+    - scope: entity.name.variable.c
       match: '{{valid_names}}'
 
   declar_typedef_names:
