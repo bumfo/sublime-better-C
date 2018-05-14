@@ -40,6 +40,9 @@ variables:
   __test_declarations_simple: '{{type_modifiers}}|{{basic_types}}|{{struct_like}}'
   __test_custom_type_passive: '{{valid_names}}(?:[\s\*])*(?:{{type_modifiers}}|{{valid_names}})'
 
+  __test_unary_expression: '\+\+|\!|\~|\*|\&|\+|\-'
+  __test_primary_expression: '\d|{{valid_names}}|[\(\{\[]'
+
 contexts:
   prototype:
     - include: comments
@@ -350,34 +353,39 @@ contexts:
 # expressions
 
   expressions:
-    - match: '(?=\+\+|\!|\~|\*|\&|\+|\-|\d|{{valid_names}}|[\(\{\[])'
+    - match: '(?={{__test_unary_expression}}|{{__test_primary_expression}})'
       push: [_meta_expression, _expressions]
 
   _expressions:
-    - match: '(?=\+\+|\!|\~|\*|\&|\+|\-)'
-      set: 
-        - include: unary_operators_pre
-        - match: ''
-          set: _expressions
-    - match: '(?=\d|{{valid_names}}|[\(\{\[])'
+    - match: '(?={{__test_unary_expression}})'
+      set: [_expressions, _unary_operators_pre]
+    - match: '(?={{__test_primary_expression}})'
       set: [_after_call_expressions, _call_expressions, _primary_expressions]
     - include: _pop_nonspace
 
-  unary_operators_pre:
+  _unary_operators_pre:
     - scope: keyword.operator.pre-increment.c
       match: '\+\+'
+      pop: true
     - scope: keyword.operator.unary-plus.c
       match: '\+'
+      pop: true
     - scope: keyword.operator.unary-minus.c
       match: '\-'
+      pop: true
     - scope: keyword.operator.not.c
       match: '\!'
+      pop: true
     - scope: keyword.operator.bitwise-not.c
       match: '\~'
+      pop: true
     - scope: keyword.operator.deref.c
       match: '\*'
+      pop: true
     - scope: keyword.operator.address.c
       match: '\&'
+      pop: true
+    - include: _pop_immediate
 
   _primary_expressions:
     - scope: constant.numeric.integer
@@ -416,21 +424,22 @@ contexts:
 
   _after_call_expressions:
     - match: '(?=\+|\-|\*|\/|\%|\^|\&|\||\.|\-\>|\=|<|>|<<|>>|!=)'
-      set:
-        - include: binary_operators
-        - match: ''
-          set: _expressions
+      set: [_expressions, _binary_operators]
     - include: _pop_nonspace
 
-  binary_operators:
+  _binary_operators:
     - scope: punctuation.accessor.c
       match: '\.|\-\>'
+      pop: true
     - scope: keyword.operator.binary.compound.c
       match: '(?:\+|\-|\*|\/|\%|\^|\&|\||<<|>>)\='
+      pop: true
     - scope: keyword.operator.binary.compare.c
       match: '(?:\>|\<)\=?|(?:\=|\!)\='
+      pop: true
     - scope: keyword.operator.binary.c
       match: '\+|\-|\*|\/|\%|\^|\&|\||\,|\=|<<|>>'
+      pop: true
 
 
   __expression_groups:
