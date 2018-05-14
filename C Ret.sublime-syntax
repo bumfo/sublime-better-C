@@ -311,9 +311,9 @@ contexts:
 
   declar_function_names:
     - scope: entity.name.function.forward-decl.c
-      match: '{{valid_names}}(?=\([^;]+;)'
+      match: '{{valid_names}}(?=\s*\([^;]+;)'
     - scope: entity.name.function.c
-      match: '{{valid_names}}(?=\()'
+      match: '{{valid_names}}(?=\s*\()'
 
   declar_variable_names:
     - scope: variable.other.c
