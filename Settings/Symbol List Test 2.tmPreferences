@@ -6,11 +6,11 @@
 	<key>scope</key>
 	<!-- <string>(source.c1y) &amp; (meta.declarations.specifier)</string> -->
 	<!-- <string>(source.c1y) &amp; (entity.name.type)</string> -->
-	<string>(source.c1y) &amp; (meta.expression.c)</string>
+	<string>(source.c1y) &amp; (entity)</string>
 	<key>settings</key>
 	<dict>
 		<key>showInSymbolList</key>
-		<integer>1</integer>
+		<integer>0</integer>
 		<key>showInIndexedSymbolList</key>
 		<integer>0</integer>
 	</dict>
