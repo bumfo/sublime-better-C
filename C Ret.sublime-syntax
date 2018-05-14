@@ -178,10 +178,29 @@ contexts:
   _declar_name:
     - match: '(?={{valid_names}})'
       set:
-        - include: declar_function_names
-        - include: declar_variable_names
-        - match: ''
+        - include: declar_names
+        - include: _pop_immediate
+    - include: __declar_name_paren
+    - include: _pop_nonspace
+
+  __declar_name_paren:
+    - scope: punctuation.section.paren.begin
+      match: '\('
+      set:
+        - match: '(?={{valid_names}})'
+          push: 
+            - include: declar_names
+            - include: _pop_immediate
+        - match: '(?=\*)'
+          push: [_declar_after_name, _declar_name, _declar_after_type_and_modifiers]
+        - match: '(?=\()'
+          push: _declar_name_paren
+        - scope: punctuation.section.paren.end
+          match: '\)'
           pop: true
+
+  _declar_name_paren:
+    - include: __declar_name_paren
     - include: _pop_nonspace
 
   _declar_typedef_type:
@@ -262,6 +281,10 @@ contexts:
       match: '{{valid_names}}(?=[^;{]+;)'
     - scope: entity.name.union.c
       match: '{{valid_names}}'
+
+  declar_names:
+    - include: declar_function_names
+    - include: declar_variable_names
 
   declar_function_names:
     - scope: entity.name.function.forward-decl.c
