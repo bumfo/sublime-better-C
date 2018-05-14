@@ -402,6 +402,7 @@ contexts:
     - scope: variable.function.c
       match: '{{valid_names}}(?=\s*\()'
       pop: true
+    - include: language_constants
     - scope: variable.other.c
       match: '{{valid_names}}'
       pop: true
@@ -575,6 +576,10 @@ contexts:
   statement_terminators:
     - scope: punctuation.terminator.c
       match: ';'
+
+  language_constants:
+    - scope: constant.language.c
+      match: '\b(?:NULL|TRUE|FALSE)\b'
 
   simple_braces:
     - match: '\{'
