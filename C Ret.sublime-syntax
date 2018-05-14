@@ -58,14 +58,14 @@ contexts:
 # declarations
 
   declarations:
-    - include: declar_function_definitions
+    # - include: declar_function_definitions
     - match: '{{declarations_lookahead}}'
-      push: [_declar_list_continue, _declar_initializer, _declar_after_name, _declar_name, _meta_declarations_specifier, _declar_before_type]
+      push: [_declar_name_and_continue, _meta_declarations_specifier, _declar_before_type]
 
   _declar_list_continue:
     - scope: punctuation.separator.c
       match: ','
-      set: [_declar_list_continue, _declar_initializer, _declar_after_name, _declar_name, _declar_after_type_and_modifiers]
+      set: [_declar_name_and_continue, _declar_after_type_and_modifiers]
     - include: _pop_nonspace
 
 
@@ -189,6 +189,11 @@ contexts:
   _meta_declarations_typedef_specifier:
     - meta_scope: meta.declarations.typedef.specifier.c
     - include: _pop_immediate
+
+
+  _declar_name_and_continue:
+    - match: '(?={{valid_names}}|\()'
+      set: [_declar_list_continue, _declar_initializer, _declar_after_name, _declar_name]
 
 
   _declar_name:
