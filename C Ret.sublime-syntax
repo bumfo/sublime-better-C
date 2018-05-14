@@ -40,7 +40,7 @@ variables:
   __test_declarations_simple: '{{type_modifiers}}|{{basic_types}}|{{struct_like}}'
   __test_custom_type_passive: '{{valid_names}}(?:[\s\*])*(?:{{type_modifiers}}|{{valid_names}})'
 
-  __test_unary_expression: '\+\+|\!|\~|\*|\&|\+|\-'
+  __test_unary_expression: '\b(?:sizeof)\b|\+\+|\!|\~|\*|\&|\+|\-'
   __test_primary_expression: '\d|{{valid_names}}|[\(\{\[]|"|'''
 
   integer_suffix: '(?i:U(?:LL|L)|(?:LL|L)U|U|LL|L)'
@@ -424,6 +424,9 @@ contexts:
     - include: _pop_nonspace
 
   _unary_operators_pre:
+    - scope: keyword.operator.word.sizeof.c
+      match: '\b(?:sizeof)\b'
+      pop: true
     - scope: keyword.operator.pre-increment.c
       match: '\+\+'
       pop: true
