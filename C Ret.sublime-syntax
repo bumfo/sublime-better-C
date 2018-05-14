@@ -60,12 +60,12 @@ contexts:
 
   declarations:
     - match: '{{declarations_lookahead}}'
-      push: [_declar_name, _meta_declarations_specifier, _declar_before_type]
+      push: [_declar_list_continue, _declar_after_name, _declar_name, _meta_declarations_specifier, _declar_before_type]
 
   typedef_declarations:
     - scope: keyword.other.typedef.c
       match: '\b(?:typedef)\b'
-      push: [_declar_typedef_type, _meta_declarations_typedef_specifier, _declar_before_type]
+      push: [_declar_after_name, _declar_typedef_type, _meta_declarations_typedef_specifier, _declar_before_type]
 
   _declar_before_type:
     - include: type_modifiers
@@ -86,6 +86,12 @@ contexts:
     - include: type_modifiers
     - include: __declar_pointer
     - match: '(?=\s*(?!\*|{{type_modifiers}})\S)'
+      pop: true
+    - include: _pop_nonspace
+
+  _declar_after_type_and_modifiers:
+    - include: __declar_pointer
+    - match: '(?=\s*(?!\*)\S)'
       pop: true
     - include: _pop_nonspace
 
@@ -125,12 +131,12 @@ contexts:
     - include: _pop_nonspace
 
   _struct_like_body:
-    - scope: punctuation.section.begin.c
+    - scope: punctuation.section.brace.begin.c
       match: '\{'
       push:
         - include: declarations
         - include: simple_braces
-        - scope: punctuation.section.end.c
+        - scope: punctuation.section.brace.end.c
           match: '\}'
           pop: true
     - match: '(?=\s*(?!\{)\S)'
@@ -172,6 +178,29 @@ contexts:
         - include: declar_typedef_types
         - match: ''
           pop: true
+    - include: _pop_nonspace
+
+  _declar_after_name:
+    - scope: punctuation.section.paren.begin.c
+      match: '\('
+      set: 
+        - include: simple_parens
+        - scope: punctuation.section.paren.end.c
+          match: '\)'
+          pop: true
+    - scope: punctuation.section.bracket.begin.c
+      match: '\['
+      set: 
+        - include: simple_brackets
+        - scope: punctuation.section.bracket.end.c
+          match: '\]'
+          pop: true
+    - include: _pop_nonspace
+
+  _declar_list_continue:
+    - scope: punctuation.separator.c
+      match: ','
+      set: _declar_after_type_and_modifiers
     - include: _pop_nonspace
 
 
@@ -246,3 +275,16 @@ contexts:
       push:
         - match: '\}'
           pop: true
+
+  simple_brackets:
+    - match: '\['
+      push:
+        - match: '\]'
+          pop: true
+
+  simple_parens:
+    - match: '\('
+      push:
+        - match: '\)'
+          pop: true
+
