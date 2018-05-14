@@ -354,7 +354,7 @@ contexts:
 
   expressions_no_comma:
     - match: '(?={{__test_unary_expression}}|{{__test_primary_expression}})'
-      push: [_meta_expression, _expressions]
+      push: [_expressions]
 
   expressions:
     - include: expressions_no_comma
@@ -362,8 +362,12 @@ contexts:
       match: ','
 
   _expressions:
+    - match: ''
+      set: [_meta_expression, _expressions_no_meta]
+
+  _expressions_no_meta:
     - match: '(?={{__test_unary_expression}})'
-      set: [_expressions, _unary_operators_pre]
+      set: [_expressions_no_meta, _unary_operators_pre]
     - match: '(?={{__test_primary_expression}})'
       set: [_triple_operator_expressions, _binary_operator_expressions, _call_expressions, _primary_expressions]
     - include: _pop_nonspace
@@ -390,7 +394,6 @@ contexts:
     - scope: keyword.operator.address.c
       match: '\&'
       pop: true
-    - include: _pop_immediate
 
   _primary_expressions:
     - scope: constant.numeric.integer
@@ -409,6 +412,14 @@ contexts:
   _call_expressions:
     - scope: keyword.operator.post-increment.c
       match: '\+\+'
+      set: _call_expressions
+    - match: '(?=\()'
+      set: [_call_expressions, _expression_call_arguments]
+    - match: '(?=\[)'
+      set: [_call_expressions, _expression_subscriptors]
+    - include: _pop_nonspace
+
+  _expression_call_arguments:
     - scope: punctuation.section.arguments.begin.c
       match: '\('
       set:
@@ -418,6 +429,9 @@ contexts:
         - scope: punctuation.section.arguments.end.c
           match: '\)'
           pop: true
+    - include: _pop_immediate
+
+  _expression_subscriptors:
     - scope: punctuation.section.subscript.begin.c
       match: '\['
       set:
@@ -425,16 +439,16 @@ contexts:
         - scope: punctuation.section.subscript.end.c
           match: '\]'
           pop: true
-    - include: _pop_nonspace
+    - include: _pop_immediate
 
   _binary_operator_expressions:
     - match: '(?=\+|\-|\*|\/|\%|\^|\&|\||\.|\-\>|\=|<|>|<<|>>|!=)'
-      set: [_expressions, _binary_operators]
+      set: [_expressions_no_meta, _binary_operators]
     - include: _pop_nonspace
 
   _triple_operator_expressions:
     - match: '(?=\?)'
-      set: [_expressions, _triple_operators]
+      set: [_expressions_no_meta, _triple_operators]
     - include: _pop_nonspace
 
   _binary_operators:
@@ -455,7 +469,7 @@ contexts:
   _triple_operators:
     - scope: keyword.operator.triple.first.c
       match: '\?'
-      set: [_triple_operators_continue, _expressions]
+      set: [_triple_operators_continue, _expressions_no_meta]
     - include: _pop_immediate
 
   _triple_operators_continue:
