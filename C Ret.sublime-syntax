@@ -440,6 +440,7 @@ contexts:
     - scope: keyword.operator.binary.c
       match: '\+|\-|\*|\/|\%|\^|\&|\||\,|\=|<<|>>'
       pop: true
+    - include: _pop_immediate
 
 
   __expression_groups:
