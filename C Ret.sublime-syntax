@@ -53,6 +53,8 @@ contexts:
   statements:
     - include: typedef_declarations
     - include: declarations
+    - scope: punctuation.terminator.c
+      match: ';'
 
 # declarations
 
