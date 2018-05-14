@@ -553,6 +553,25 @@ contexts:
     - meta_scope: meta.expression.c
     - include: _pop_immediate
 
+# comments
+
+  comments:
+    - scope: punctuation.definition.comment.line.c
+      match: '//'
+      push:
+        - meta_scope: comment.line.c
+        - match: '$'
+          pop: true
+    - scope: punctuation.definition.comment.block.begin.c
+      match: '/\*'
+      push:
+        - meta_scope: comment.block.c
+        - scope: punctuation.definition.comment.block.end.c
+          match: '\*/'
+          pop: true
+
+
+
 # util
 
   _pop_nonspace:
