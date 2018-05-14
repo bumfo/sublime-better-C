@@ -54,7 +54,9 @@ contexts:
     - include: control_statements
     - include: typedef_declarations
     - include: declarations
+    - include: statement_groups
     - include: statement_terminators
+    - include: expressions
 
 # declarations
 
@@ -306,15 +308,100 @@ contexts:
       match: '\b(?:return)\b'
       push: _expression
 
+  statement_groups:
+    - scope: punctuation.section.brace.begin.c
+      match: '\{'
+      push:
+        - include: statements
+        - scope: punctuation.section.brace.end.c
+          match: '\}'
+          pop: true
+
 # expressions
 
   expressions:
+    - match: '(?=\+\+|\!|\~|\*|\&)'
+      push: 
+        - include: unary_operators_pre
+        - match: ''
+          set: _expression
+    - match: '(?=\d|[\(\{\[])'
+      push: 
+        - include: primary_expressions
+        - match: ''
+          set: [_after_call_expressions, _call_expressions]
+
+  unary_operators_pre:
+    - scope: keyword.operator.pre-increment.c
+      match: '\+\+'
+    - scope: keyword.operator.not.c
+      match: '\!'
+    - scope: keyword.operator.bitwise-not.c
+      match: '\~'
+    - scope: keyword.operator.deref.c
+      match: '\*'
+    - scope: keyword.operator.address.c
+      match: '\&'
+
+  primary_expressions:
     - scope: constant.numeric.integer
       match: '\d+'
+    - include: expression_groups
+    - include: simple_braces
+    - include: simple_parens
+
+  call_expressions:
+    - scope: keyword.operator.post-increment.c
+      match: '\+\+'
+    - scope: punctuation.section.arguments.begin.c
+      match: '\('
+      push:
+        - scope: punctuation.separator.c
+          match: ','
+        - include: expressions
+        - scope: punctuation.section.arguments.end.c
+          match: '\)'
+          pop: true
+    - scope: punctuation.section.subscript.begin.c
+      match: '\['
+      push:
+        - include: expressions
+        - scope: punctuation.section.subscript.end.c
+          match: '\]'
+          pop: true
+
+  _call_expressions:
+    - include: call_expressions
+    - include: _pop_nonspace
+
+  _after_call_expressions:
+    - match: '(?=\+|\-|\*|\/|\%|\^|\&|\||\.|\-\>|\=|<|>|<<|>>)'
+      set:
+        - include: binary_operators
+        - include: _pop_nonspace
+    - include: _pop_nonspace
+
+  binary_operators:
+    - scope: keyword.operator.binary.compound.c
+      match: '(?:\+|\-|\*|\/|\%|\^|\&|\||<<|>>)\='
+    - scope: keyword.operator.binary.compare.c
+      match: '(?:\>|\<|\=)\='
+    - scope: keyword.operator.binary.c
+      match: '\+|\-|\*|\/|\%|\^|\&|\||\,|\.|\-\>|\=|<<|>>'
+
+
+  expression_groups:
+    - scope: punctuation.section.paren.begin.c
+      match: '\('
+      push:
+        - include: expressions
+        - scope: punctuation.section.paren.end.c
+          match: '\)'
+          pop: true
 
   _expression:
     - include: expressions
-    - match: '(?=[;])'
+    - match: '(?=[;})\]])'
       pop: true
 
 # util
