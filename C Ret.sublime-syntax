@@ -41,7 +41,7 @@ variables:
   __test_custom_type_passive: '{{valid_names}}(?:[\s\*])*(?:{{type_modifiers}}|{{valid_names}})'
 
   __test_unary_expression: '\+\+|\!|\~|\*|\&|\+|\-'
-  __test_primary_expression: '\d|{{valid_names}}|[\(\{\[]'
+  __test_primary_expression: '\d|{{valid_names}}|[\(\{\[]|"|'''
 
   integer_suffix: '(?i:U(?:LL|L)|(?:LL|L)U|U|LL|L)'
 
@@ -448,6 +448,7 @@ contexts:
 
   _primary_expressions:
     - include: __numeric_literals
+    - include: __strings
     - scope: variable.function.c
       match: '{{valid_names}}(?=\s*\()'
       pop: true
@@ -469,6 +470,36 @@ contexts:
     - scope: constant.numeric.decimal.c
       match: '\b[1-9]\d*{{integer_suffix}}?\b'
       pop: true
+
+  __strings:
+    - scope: punctuation.definition.string.begin.c
+      match: '"'
+      set:
+        - meta_scope: string.c
+        - include: string_contents
+        - scope: punctuation.definition.string.end.c
+          match: '"'
+          pop: true
+
+    - scope: punctuation.definition.string.begin.c
+      match: ''''
+      set:
+        - meta_scope: string.c
+        - include: string_contents
+        - scope: punctuation.definition.string.end.c
+          match: ''''
+          pop: true
+
+  string_contents:
+    - scope: constant.character.escape.c
+      match: '\\[''"?\\abfnrtv]'
+    - scope: constant.character.escape.octal.c
+      match: '\\[0-7]{1,3}'
+    - scope: constant.character.escape.hex.c
+      match: '\\x[0-9a-zA-Z]+'
+    - scope: constant.character.escape.unicode.c
+      match: '\\[uU][0-9a-zA-Z]+'
+
 
   _call_expressions:
     - scope: keyword.operator.post-increment.c
