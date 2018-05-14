@@ -59,24 +59,26 @@ contexts:
 
   declarations:
     - match: '{{declarations_lookahead}}'
-      push: [_declar_list_continue, _declar_after_name, _declar_name, _meta_declarations_specifier, _declar_before_type]
+      push: [_declar_list_continue, _declar_initializer, _declar_after_name, _declar_name, _meta_declarations_specifier, _declar_before_type]
+
+  _declar_list_continue:
+    - scope: punctuation.separator.c
+      match: ','
+      set: [_declar_list_continue, _declar_initializer, _declar_after_name, _declar_name, _declar_after_type_and_modifiers]
+    - include: _pop_nonspace
+
 
   typedef_declarations:
     - scope: keyword.other.typedef.c
       match: '\b(?:typedef)\b'
       push: [_typedef_declar_list_continue, _declar_after_name, _declar_typedef_name, _meta_declarations_typedef_specifier, _declar_before_type]
 
-  _declar_list_continue:
-    - scope: punctuation.separator.c
-      match: ','
-      set: [_declar_list_continue, _declar_after_name, _declar_name, _declar_after_type_and_modifiers]
-    - include: _pop_nonspace
-
   _typedef_declar_list_continue:
     - scope: punctuation.separator.c
       match: ','
       set: [_typedef_declar_list_continue, _declar_after_name, _declar_typedef_name, _declar_after_type_and_modifiers]
     - include: _pop_nonspace
+
 
   _declar_before_type:
     - include: type_modifiers
@@ -251,6 +253,14 @@ contexts:
           pop: true
     - include: _pop_nonspace
 
+
+  _declar_initializer:
+    - scope: punctuation
+      match: '\='
+      push:
+        - match: '(?=[,;])'
+          pop: true
+    - include: _pop_nonspace
 
 
 
