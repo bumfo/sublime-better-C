@@ -58,6 +58,7 @@ contexts:
 # declarations
 
   declarations:
+    - include: declar_function_definitions
     - match: '{{declarations_lookahead}}'
       push: [_declar_list_continue, _declar_initializer, _declar_after_name, _declar_name, _meta_declarations_specifier, _declar_before_type]
 
@@ -102,8 +103,15 @@ contexts:
       pop: true
     - include: _pop_nonspace
 
+  _declar_after_type_continue:
+    - include: type_modifiers
+    - include: __declar_pointer_continue
+    - match: '(?=\s*(?!\*|{{type_modifiers}})\S)'
+      pop: true
+    - include: _pop_nonspace
+
   _declar_after_type_and_modifiers:
-    - include: __declar_pointer
+    - include: __declar_pointer_continue
     - match: '(?=\s*(?!\*)\S)'
       pop: true
     - include: _pop_nonspace
@@ -168,6 +176,11 @@ contexts:
     - scope: storage.modifier.pointer
       match: '\*'
       set: _declar_after_type
+
+  __declar_pointer_continue:
+    - scope: storage.modifier.pointer
+      match: '\*'
+      set: _declar_after_type_continue
 
   _meta_declarations_specifier:
     - meta_scope: meta.declarations.specifier.c
@@ -263,6 +276,20 @@ contexts:
     - include: _pop_nonspace
 
 
+  declar_function_definitions:
+    - match: '{{declarations_lookahead}}(?=(?:(?:{{identifier}}|\*)\s*)+\s*(?:\(\s*(?:\*\s*)*)*{{valid_names}}\s*\((?:[^;\{]+(?:$|\{)))'
+      push: [_declar_function_defination_body, _declar_after_name, _declar_name, _meta_declarations_specifier, _declar_before_type]
+
+  _declar_function_defination_body:
+    - scope: punctuation.section.brace.begin.c
+      match: '\{'
+      set:
+        - include: statements
+        - scope: punctuation.section.brace.end.c
+          match: '\}'
+          pop: true
+    - match: '(?=\S)'
+      set: [_declar_list_continue, _declar_initializer]
 
 
 # util
