@@ -297,7 +297,7 @@ contexts:
       match: '\='
       push:
         - include: expressions
-        - match: '(?=[,;])'
+        - match: '(?=[,;)])'
           pop: true
     - include: _pop_nonspace
 
@@ -306,7 +306,37 @@ contexts:
   control_statements:
     - scope: keyword.control.return.c
       match: '\b(?:return)\b'
-      push: _expression
+      push: _expressions
+    - scope: keyword.control.for.c
+      match: '\b(?:for)\b'
+      push:
+        - scope: punctuation.section.paren.begin.c
+          match: '\('
+          set: 
+            - match: '{{declarations_lookahead}}'
+              push: 
+                - include: declarations
+                - include: _for_continue
+            - scope: punctuation.section.paren.end.c
+              match: '\)'
+              pop: true
+            - match: '(?=\S)'
+              push: [_for_continue, _expressions]
+        - include: _pop_nonspace
+
+  _for_continue:
+    - scope: punctuation.terminator.c
+      match: ';'
+      set: 
+        - include: expressions
+        - scope: punctuation.terminator.c
+          match: ';'
+          set: 
+            - include: expressions
+            - match: '(?=\))'
+              pop: true
+        - include: _pop_nonspace
+    - include: _pop_nonspace
 
   statement_groups:
     - scope: punctuation.section.statements.begin.c
@@ -320,13 +350,18 @@ contexts:
 # expressions
 
   expressions:
+    - match: '(?=\+\+|\!|\~|\*|\&|\+|\-|\d|{{valid_names}}|[\(\{\[])'
+      push: [_meta_expression, _expressions]
+
+  _expressions:
     - match: '(?=\+\+|\!|\~|\*|\&|\+|\-)'
-      push: 
+      set: 
         - include: unary_operators_pre
         - match: ''
-          set: _expression
+          set: _expressions
     - match: '(?=\d|{{valid_names}}|[\(\{\[])'
-      push: [_after_call_expressions, _call_expressions, _primary_expressions]
+      set: [_after_call_expressions, _call_expressions, _primary_expressions]
+    - include: _pop_nonspace
 
   unary_operators_pre:
     - scope: keyword.operator.pre-increment.c
@@ -358,12 +393,12 @@ contexts:
     - include: __expression_eat_braces_and_brackets
     - include: _pop_immediate
 
-  call_expressions:
+  _call_expressions:
     - scope: keyword.operator.post-increment.c
       match: '\+\+'
     - scope: punctuation.section.arguments.begin.c
       match: '\('
-      push:
+      set:
         - scope: punctuation.separator.c
           match: ','
         - include: expressions
@@ -372,14 +407,11 @@ contexts:
           pop: true
     - scope: punctuation.section.subscript.begin.c
       match: '\['
-      push:
+      set:
         - include: expressions
         - scope: punctuation.section.subscript.end.c
           match: '\]'
           pop: true
-
-  _call_expressions:
-    - include: call_expressions
     - include: _pop_nonspace
 
   _after_call_expressions:
@@ -387,7 +419,7 @@ contexts:
       set:
         - include: binary_operators
         - match: ''
-          set: _expression
+          set: _expressions
     - include: _pop_nonspace
 
   binary_operators:
@@ -422,10 +454,10 @@ contexts:
         - match: '\]'
           pop: true
 
-  _expression:
-    - include: expressions
-    - match: '(?=[;})\]])'
-      pop: true
+
+  _meta_expression:
+    - meta_scope: meta.expression.c
+    - include: _pop_immediate
 
 # util
 
