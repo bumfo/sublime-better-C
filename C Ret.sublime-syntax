@@ -53,8 +53,7 @@ contexts:
   statements:
     - include: typedef_declarations
     - include: declarations
-    - scope: punctuation.terminator.c
-      match: ';'
+    - include: statement_terminators
 
 # declarations
 
@@ -65,7 +64,19 @@ contexts:
   typedef_declarations:
     - scope: keyword.other.typedef.c
       match: '\b(?:typedef)\b'
-      push: [_declar_after_name, _declar_typedef_type, _meta_declarations_typedef_specifier, _declar_before_type]
+      push: [_typedef_declar_list_continue, _declar_after_name, _declar_typedef_type, _meta_declarations_typedef_specifier, _declar_before_type]
+
+  _declar_list_continue:
+    - scope: punctuation.separator.c
+      match: ','
+      set: [_declar_list_continue, _declar_after_name, _declar_name, _declar_after_type_and_modifiers]
+    - include: _pop_nonspace
+
+  _typedef_declar_list_continue:
+    - scope: punctuation.separator.c
+      match: ','
+      set: [_typedef_declar_list_continue, _declar_after_name, _declar_typedef_type, _declar_after_type_and_modifiers]
+    - include: _pop_nonspace
 
   _declar_before_type:
     - include: type_modifiers
@@ -135,6 +146,7 @@ contexts:
       match: '\{'
       push:
         - include: declarations
+        - include: statement_terminators
         - include: simple_braces
         - scope: punctuation.section.brace.end.c
           match: '\}'
@@ -197,11 +209,6 @@ contexts:
           pop: true
     - include: _pop_nonspace
 
-  _declar_list_continue:
-    - scope: punctuation.separator.c
-      match: ','
-      set: _declar_after_type_and_modifiers
-    - include: _pop_nonspace
 
 
 
@@ -269,6 +276,10 @@ contexts:
   declar_typedef_types:
     - scope: entity.name.type.c
       match: '{{valid_names}}'
+
+  statement_terminators:
+    - scope: punctuation.terminator.c
+      match: ';'
 
   simple_braces:
     - match: '\{'
