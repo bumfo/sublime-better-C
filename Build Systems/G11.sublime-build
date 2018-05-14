@@ -1,0 +1,26 @@
+{
+	"shell_cmd": "/usr/local/opt/gcc/bin/gcc-8 -Wall -std=c11 -pedantic \"${file}\" -o \"${file_path}/${file_base_name}\"",
+	"file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
+	"working_dir": "${file_path}",
+	"selector": "source.c99, source.c11, source.c1x, source.c1y",
+
+	"variants":
+	[
+		{
+			"name": "Strict",
+			"shell_cmd": "/usr/local/opt/gcc/bin/gcc-8 -Wall -std=c11 -pedantic-errors \"${file}\" -o \"${file_path}/${file_base_name}\""
+		},
+		{
+			"name": "Strict O1",
+			"shell_cmd": "/usr/local/opt/gcc/bin/gcc-8 -Wall -O1 -std=c11 -pedantic-errors \"${file}\" -o \"${file_path}/${file_base_name}\""
+		},
+		{
+			"name": "Strict O2",
+			"shell_cmd": "/usr/local/opt/gcc/bin/gcc-8 -Wall -O2 -std=c11 -pedantic-errors \"${file}\" -o \"${file_path}/${file_base_name}\""
+		},
+		{
+			"name": "Strict O3",
+			"shell_cmd": "/usr/local/opt/gcc/bin/gcc-8 -Wall -O3 -std=c11 -pedantic-errors \"${file}\" -o \"${file_path}/${file_base_name}\""
+		},
+	]
+}
