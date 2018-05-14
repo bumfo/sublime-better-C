@@ -362,7 +362,7 @@ contexts:
       match: ','
 
   _expressions:
-    - match: ''
+    - match: '(?=\S)'
       set: [_meta_expression, _expressions_no_meta]
 
   _expressions_no_meta:
