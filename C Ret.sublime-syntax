@@ -51,6 +51,7 @@ contexts:
     - include: statements # test
 
   statements:
+    - include: control_statements
     - include: typedef_declarations
     - include: declarations
     - include: statement_terminators
@@ -282,6 +283,7 @@ contexts:
     - scope: punctuation.section.bracket.begin.c
       match: '\['
       set: 
+        - include: expressions
         - include: simple_brackets
         - scope: punctuation.section.bracket.end.c
           match: '\]'
@@ -292,12 +294,28 @@ contexts:
     - scope: punctuation
       match: '\='
       push:
+        - include: expressions
         - match: '(?=[,;])'
           pop: true
     - include: _pop_nonspace
 
+# statements
 
+  control_statements:
+    - scope: keyword.control.return.c
+      match: '\b(?:return)\b'
+      push: _expression
 
+# expressions
+
+  expressions:
+    - scope: constant.numeric.integer
+      match: '\d+'
+
+  _expression:
+    - include: expressions
+    - match: '(?=[;])'
+      pop: true
 
 # util
 
