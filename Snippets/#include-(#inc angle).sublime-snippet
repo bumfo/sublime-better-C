@@ -2,5 +2,5 @@
 	<description>#include &lt;…&gt;</description>
 	<content><![CDATA[include <${1:.h}>]]></content>
 	<tabTrigger>inc</tabTrigger>
-	<scope>(source.c1x | source.c99 | source.c11 | source.c++11 | source.c | source.objc | source.c++ | source.c++1z | source.objc++) &amp;meta.preprocessor.incomplete</scope>
+	<scope>(source.c1x | source.c1y | source.c99 | source.c11 | source.c++11 | source.c | source.objc | source.c++ | source.c++1z | source.objc++) &amp;meta.preprocessor.incomplete</scope>
 </snippet>
