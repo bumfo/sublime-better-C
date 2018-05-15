@@ -29,7 +29,6 @@ int f(int i) {
       } while (true);
     }
 
-
 done:
     return f(j);
   }
