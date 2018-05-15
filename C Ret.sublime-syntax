@@ -478,8 +478,9 @@ contexts:
     - scope: punctuation.definition.string.begin.c
       match: '"'
       set:
-        - meta_scope: string.c
-        - include: string_contents
+        - meta_include_prototype: false
+        - meta_scope: string.quoted.double.c
+        - include: __string_contents
         - scope: punctuation.definition.string.end.c
           match: '"'
           pop: true
@@ -487,13 +488,14 @@ contexts:
     - scope: punctuation.definition.string.begin.c
       match: ''''
       set:
-        - meta_scope: string.c
-        - include: string_contents
+        - meta_include_prototype: false
+        - meta_scope: string.quoted.single.c
+        - include: __string_contents
         - scope: punctuation.definition.string.end.c
           match: ''''
           pop: true
 
-  string_contents:
+  __string_contents:
     - scope: constant.character.escape.c
       match: '\\[''"?\\abfnrtv]'
     - scope: constant.character.escape.octal.c
@@ -502,6 +504,12 @@ contexts:
       match: '\\x[0-9a-zA-Z]+'
     - scope: constant.character.escape.unicode.c
       match: '\\[uU][0-9a-zA-Z]+'
+    - scope: punctuation.separator.continuation.c
+      match: '\\$\n'
+    - scope: invalid.illegal
+      match: '\\[^\n]'
+    - match: '$\n'
+      pop: true
 
 
   _call_expressions:
