@@ -563,11 +563,14 @@ contexts:
     - scope: keyword.operator.binary.compound.c
       match: '(?:\+|\-|\*|\/|\%|\^|\&|\||<<|>>)\='
       pop: true
+    - scope: keyword.operator.binary.c
+      match: '<<|>>'
+      pop: true
     - scope: keyword.operator.binary.compare.c
       match: '(?:\>|\<)\=?|(?:\=|\!)\='
       pop: true
     - scope: keyword.operator.binary.c
-      match: '\+|\-|\*|\/|\%|\^|\&|\||\,|\=|<<|>>'
+      match: '\+|\-|\*|\/|\%|\^|\&|\||\,|\='
       pop: true
     - include: _pop_immediate
 
