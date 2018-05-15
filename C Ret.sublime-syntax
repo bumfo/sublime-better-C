@@ -427,9 +427,29 @@ contexts:
     - scope: punctuation.section.switch.c
       match: '\{'
       set:
+        - scope: keyword.control.default.c
+          match: '\b(?:case)\b'
+          push: [_switch_label_content, _case_expression]
+        - scope: keyword.control.default.c
+          match: '\b(?:default)\b'
+          push: _switch_label_content
         - scope: punctuation.section.switch.c
           match: '\}'
           pop: true
+    - include: _pop_nonspace
+
+  _case_expression:
+    - match: '(?=:)'
+      pop: true
+    - include: expressions
+
+  _switch_label_content:
+    - scope: punctuation.separator.c
+      match: ':'
+      set:
+        - match: '(?=\}|\b(?:case|default)\b)'
+          pop: true
+        - include: statements
     - include: _pop_nonspace
 
   _do_continue:
