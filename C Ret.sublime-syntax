@@ -362,6 +362,28 @@ contexts:
     - scope: keyword.control.return.c
       match: '\b(?:return)\b'
       push: _expressions
+    - scope: keyword.control.continue.c
+      match: '\b(?:continue)\b'
+    - scope: keyword.control.break.c
+      match: '\b(?:break)\b'
+    - scope: keyword.control.goto.c
+      match: '\b(?:goto)\b'
+      push:
+        - scope: meta.goto.label
+          match: '{{valid_names}}'
+        - include: _pop_nonspace
+    - scope: keyword.control.if.c
+      match: '\b(?:if)\b'
+      push: [_else_statement, _single_statement_or_group, _statement_expression_paran]
+    - scope: keyword.control.switch.c
+      match: '\b(?:switch)\b'
+      push: [_swicth_continue, _statement_expression_paran]
+    - scope: keyword.control.do.c
+      match: '\b(?:do)\b'
+      push: [_do_continue, _single_statement_or_group]
+    - scope: keyword.control.while.c
+      match: '\b(?:while)\b'
+      push: [_single_statement_or_group, _statement_expression_paran]
     - scope: keyword.control.for.c
       match: '\b(?:for)\b'
       push:
@@ -378,6 +400,43 @@ contexts:
             - match: '(?=\S)'
               push: [_for_continue, _expressions]
         - include: _pop_nonspace
+
+  _statement_expression_paran:
+    - scope: punctuation.section.paren.begin.c
+      match: '\('
+      set:
+        - scope: punctuation.section.paren.end.c
+          match: '\)'
+          pop: true
+        - include: expressions
+    - include: _pop_nonspace
+
+  _single_statement_or_group:
+    - scope: punctuation.terminator.c
+      match: '(?<=\})|;'
+      pop: true
+    - include: statements
+
+  _else_statement:
+    - scope: keyword.control.else.c
+      match: '\b(?:else)\b'
+      set: _single_statement_or_group
+    - include: _pop_nonspace
+
+  _swicth_continue:
+    - scope: punctuation.section.switch.c
+      match: '\{'
+      set:
+        - scope: punctuation.section.switch.c
+          match: '\}'
+          pop: true
+    - include: _pop_nonspace
+
+  _do_continue:
+    - scope: keyword.control.do-while.c
+      match: '\b(?:while)\b'
+      set: _statement_expression_paran
+    - include: _pop_nonspace
 
   _for_continue:
     - scope: punctuation.terminator.c
@@ -640,14 +699,14 @@ contexts:
         - include: __preprocessors_include
         - scope: keyword.control.directive.c
           match: '\b(?:include|define|undef|if|ifdef|ifndef|elif|else|endif|line|error|pragma)\b'
-          set: _pop_preprocessors
+          set: _preprocessors_pop
         - match: '(?=\S)'
-          set: _pop_preprocessors
+          set: _preprocessors_pop
       with_prototype:
         - include: line_continuations
-        - include: _pop_preprocessors
+        - include: _preprocessors_pop
 
-  _pop_preprocessors:
+  _preprocessors_pop:
     - match: '$\n'
       pop: true
 
