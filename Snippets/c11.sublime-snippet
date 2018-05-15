@@ -1,0 +1,10 @@
+<snippet>
+	<description>c11</description>
+	<content><![CDATA[#include <stdio.h>
+
+int main() {
+  ${0}
+}]]></content>
+	<tabTrigger>c11</tabTrigger>
+	<scope>source.c1y</scope>
+</snippet>

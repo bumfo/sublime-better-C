@@ -1,0 +1,8 @@
+<snippet>
+	<description>If Condition</description>
+	<content><![CDATA[if (${1:1}) {
+	${0}
+}]]></content>
+	<tabTrigger>if</tabTrigger>
+	<scope>source.c1y</scope>
+</snippet>

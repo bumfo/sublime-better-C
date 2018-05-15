@@ -1,0 +1,8 @@
+<snippet>
+	<description>While Loop</description>
+	<content><![CDATA[while (${1:1}) {
+	${0}
+}]]></content>
+	<tabTrigger>while</tabTrigger>
+	<scope>source.c1y</scope>
+</snippet>
