@@ -47,6 +47,7 @@ variables:
 
 contexts:
   prototype:
+    - include: line_continuations
     - include: comments
     - include: preprocessors
 
@@ -506,9 +507,10 @@ contexts:
       match: '\\[uU][0-9a-zA-Z]+'
     - scope: punctuation.separator.continuation.c
       match: '\\$\n'
-    - scope: invalid.illegal
+    - scope: invalid.illegal.c
       match: '\\[^\n]'
-    - match: '$\n'
+    - scope: invalid.illegal.c
+      match: '$\n'
       pop: true
 
 
@@ -630,20 +632,21 @@ contexts:
     - scope: punctuation.definition.directive.c
       match: '^\s*#'
       push:
+        - include: comments
         - include: __preprocessors_incomplete_inc
         - include: __preprocessors_include
         - scope: keyword.control.directive.c
           match: '\b(?:include|define|undef|if|ifdef|ifndef|elif|else|endif|line|error|pragma)\b'
-          set:
-            - match: '$'
-              pop: true
+          set: _pop_preprocessors
         - match: '(?=\S)'
-          set:
-            - match: '$'
-              pop: true
+          set: _pop_preprocessors
       with_prototype:
-        - match: '$'
-          pop: true
+        - include: line_continuations
+        - include: _pop_preprocessors
+
+  _pop_preprocessors:
+    - match: '$\n'
+      pop: true
 
   __preprocessors_incomplete_inc:
     - match: '(?:i(?:nc?)?)\b\s*'
@@ -654,6 +657,7 @@ contexts:
     - scope: keyword.control.directive.c
       match: '\b(?:include)\b'
       set:
+        - include: comments
         - scope: punctuation.definition.string.angle.begin.c
           match: '<'
           set:
@@ -678,6 +682,10 @@ contexts:
   _pop_immediate:
     - match: ''
       pop: true
+
+  line_continuations:
+    - scope: punctuation.separator.continuation.c
+      match: '\\$\n'
 
   type_modifiers:
     - scope: storage.modifier.storage.c
@@ -766,4 +774,3 @@ contexts:
       push:
         - match: '\)'
           pop: true
-
