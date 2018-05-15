@@ -58,6 +58,7 @@ contexts:
     - include: statements # test
 
   statements:
+    - include: statement_labels
     - include: control_statements
     - include: typedef_declarations
     - include: declarations
@@ -357,6 +358,15 @@ contexts:
     - include: _pop_nonspace
 
 # statements
+
+  statement_labels:
+    - scope: entity.name.label.c
+      match: '{{valid_names}}(?=\s*:)'
+      push:
+        - scope: punctuation.separator.c
+          match: ':'
+          pop: true
+
 
   control_statements:
     - scope: keyword.control.return.c
