@@ -604,6 +604,7 @@ contexts:
       match: '\\[uU][0-9a-zA-Z]+'
     - scope: punctuation.separator.continuation.c
       match: '\\$\n'
+    - include: scope:source.c#string_placeholder
     - scope: invalid.illegal.c
       match: '\\[^\n]'
     - scope: invalid.illegal.c
