@@ -291,7 +291,7 @@ contexts:
         - include: simple_brackets
         - scope: punctuation.section.bracket.end.c
           match: '\]'
-          pop: true
+          set: [_declar_after_name]
     - include: _pop_nonspace
 
   _declar_initializer:
