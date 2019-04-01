@@ -134,6 +134,10 @@ contexts:
         - include: easy_pop
 
   punctuations:
+    - scope: punctuation.statement-group
+      match: '[\{\}]'
+    - scope: punctuation.subscript
+      match: '[\[\]]'
     - scope: punctuation.delimiter.comma
       match: '[,]'
     - scope: punctuation.terminator
@@ -163,7 +167,7 @@ contexts:
 
   constants:
     - scope: constant.language.c
-      match: \b(NULL|true|false|TRUE|FALSE)\b
+      match: \b(NULL|TRUE|FALSE|EOF)\b
 
   non_storage_keywords:
     - scope: keyword.other
