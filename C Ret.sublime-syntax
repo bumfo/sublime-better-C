@@ -237,7 +237,7 @@ contexts:
       match: '\('
       set:
         - match: '(?={{valid_names}})'
-          push: 
+          push:
             - include: declar_names
             - include: _pop_immediate
         - match: '(?=\*)'
@@ -266,7 +266,7 @@ contexts:
       match: '\('
       set:
         - match: '(?={{valid_names}})'
-          push: 
+          push:
             - include: declar_typedef_names
             - include: _pop_immediate
         - match: '(?=\*)'
@@ -286,7 +286,7 @@ contexts:
     - include: __declar_parameters
     - scope: punctuation.section.bracket.begin.c
       match: '\['
-      set: 
+      set:
         - include: expressions
         - include: simple_brackets
         - scope: punctuation.section.bracket.end.c
@@ -317,7 +317,7 @@ contexts:
           pop: true
     - scope: punctuation.section.param.begin.c
       match: '\('
-      set: 
+      set:
         - scope: punctuation.separator.c
           match: ','
         - include: declar_parameter_contents
@@ -342,7 +342,7 @@ contexts:
       match: '\('
       set:
         - match: '(?={{valid_names}})'
-          push: 
+          push:
             - include: declar_parameter_names
             - include: _pop_immediate
         - match: '(?=\*)'
@@ -400,9 +400,9 @@ contexts:
       push:
         - scope: punctuation.section.paren.begin.c
           match: '\('
-          set: 
+          set:
             - match: '{{declarations_lookahead}}'
-              push: 
+              push:
                 - include: declarations
                 - include: _for_continue
             - scope: punctuation.section.paren.end.c
@@ -479,11 +479,11 @@ contexts:
   _for_continue:
     - scope: punctuation.terminator.c
       match: ';'
-      set: 
+      set:
         - include: expressions
         - scope: punctuation.terminator.c
           match: ';'
-          set: 
+          set:
             - include: expressions
             - match: '(?=\))'
               pop: true
